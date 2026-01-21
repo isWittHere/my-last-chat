@@ -1,0 +1,233 @@
+{
+  "name": "my-last-chat",
+  "displayName": "My Last Chat",
+  "description": "Agent对话历史摘要管理器 - 管理和搜索您的AI聊天记录摘要",
+  "version": "0.0.1",
+  "publisher": "my-last-chat",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other",
+    "AI"
+  ],
+  "keywords": [
+    "chat",
+    "copilot",
+    "ai",
+    "history",
+    "summary"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "my-last-chat",
+          "title": "My Last Chat",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "views": {
+      "my-last-chat": [
+        {
+          "type": "webview",
+          "id": "myLastChat.chatListView",
+          "name": "聊天摘要"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "myLastChat.refresh",
+        "title": "刷新聊天列表",
+        "icon": "$(refresh)",
+        "category": "My Last Chat"
+      },
+      {
+        "command": "myLastChat.createNew",
+        "title": "新建聊天摘要",
+        "icon": "$(add)",
+        "category": "My Last Chat"
+      },
+      {
+        "command": "myLastChat.openSettings",
+        "title": "打开设置",
+        "icon": "$(gear)",
+        "category": "My Last Chat"
+      },
+      {
+        "command": "myLastChat.openFile",
+        "title": "打开聊天摘要文件",
+        "category": "My Last Chat"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "myLastChat.createNew",
+          "when": "view == myLastChat.chatListView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "myLastChat.refresh",
+          "when": "view == myLastChat.chatListView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "myLastChat.openSettings",
+          "when": "view == myLastChat.chatListView",
+          "group": "navigation@3"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "My Last Chat",
+      "properties": {
+        "myLastChat.storageLocation": {
+          "type": "string",
+          "enum": [
+            "workspace",
+            "global"
+          ],
+          "default": "workspace",
+          "description": "聊天摘要的存储位置：workspace(工作区内) 或 global(全局存储)"
+        },
+        "myLastChat.globalStoragePath": {
+          "type": "string",
+          "default": "",
+          "description": "全局存储路径（当storageLocation为global时使用）"
+        }
+      }
+    },
+    "languageModelTools": [
+      {
+        "name": "myLastChat_getLastChatsList",
+        "displayName": "Get Last Chats List",
+        "toolReferenceName": "lastchats",
+        "description": "获取所有聊天摘要的列表，返回标题、描述和元数据信息",
+        "modelDescription": "Get a list of all chat summaries stored in the My Last Chat extension. Returns titles, descriptions, and metadata of saved chat history summaries.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "feedbackLevel": {
+              "type": "string",
+              "enum": [
+                "TITLE_ONLY",
+                "DESCRIPTION",
+                "META",
+                "ALL"
+              ],
+              "default": "DESCRIPTION",
+              "description": "返回信息的详细程度：TITLE_ONLY(仅标题), DESCRIPTION(标题+描述), META(所有元数据), ALL(全文)"
+            }
+          }
+        },
+        "tags": [
+          "chat",
+          "history",
+          "search"
+        ]
+      },
+      {
+        "name": "myLastChat_searchByTitle",
+        "displayName": "Search Chats by Title",
+        "toolReferenceName": "searchchat",
+        "description": "通过关键词匹配标题搜索聊天摘要",
+        "modelDescription": "Search chat summaries by matching keywords in the title. Supports multiple keywords to expand search scope.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "keywords": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "搜索关键词列表，多个关键词会扩大搜索范围"
+            },
+            "feedbackLevel": {
+              "type": "string",
+              "enum": [
+                "TITLE_ONLY",
+                "DESCRIPTION",
+                "META",
+                "ALL"
+              ],
+              "default": "DESCRIPTION",
+              "description": "返回信息的详细程度"
+            }
+          },
+          "required": [
+            "keywords"
+          ]
+        },
+        "tags": [
+          "chat",
+          "search",
+          "title"
+        ]
+      },
+      {
+        "name": "myLastChat_searchByMeta",
+        "displayName": "Search Chats by Metadata",
+        "toolReferenceName": "searchmeta",
+        "description": "通过匹配元数据关键词搜索聊天摘要",
+        "modelDescription": "Search chat summaries by matching keywords across all metadata fields including title, description, workplace, project, type, and solved_lists.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "keywords": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "搜索关键词列表，会在所有元数据字段中匹配"
+            },
+            "feedbackLevel": {
+              "type": "string",
+              "enum": [
+                "TITLE_ONLY",
+                "DESCRIPTION",
+                "META",
+                "ALL"
+              ],
+              "default": "META",
+              "description": "返回信息的详细程度"
+            }
+          },
+          "required": [
+            "keywords"
+          ]
+        },
+        "tags": [
+          "chat",
+          "search",
+          "metadata"
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.0.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  }
+}
