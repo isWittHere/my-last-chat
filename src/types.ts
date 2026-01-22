@@ -14,7 +14,25 @@ export interface ChatMetadata {
   type?: 'coding' | 'debug' | 'planning' | 'spec';
   /** 完成的任务列表（可选） */
   solved_lists?: string[];
+  /** 创建时间（ISO 8601格式） */
+  createdAt?: string;
+  /** 修改时间（ISO 8601格式） */
+  updatedAt?: string;
+  /** 是否收藏 */
+  favorite?: boolean;
+  /** 标签列表 */
+  tags?: string[];
 }
+
+/**
+ * 反馈详细程度
+ */
+export type FeedbackLevel = 'TITLE_ONLY' | 'DESCRIPTION' | 'META' | 'ALL';
+
+/**
+ * 存储范围
+ */
+export type StorageScope = 'workspace' | 'global' | 'all';
 
 /**
  * 完整的聊天摘要数据
@@ -28,12 +46,9 @@ export interface ChatSummary {
   metadata: ChatMetadata;
   /** 正文内容 */
   content: string;
+  /** 存储范围 */
+  scope?: StorageScope;
 }
-
-/**
- * 反馈详细程度
- */
-export type FeedbackLevel = 'TITLE_ONLY' | 'DESCRIPTION' | 'META' | 'ALL';
 
 /**
  * 搜索结果项
@@ -45,6 +60,7 @@ export interface SearchResult {
   description?: string;
   metadata?: ChatMetadata;
   content?: string;
+  scope?: StorageScope;
 }
 
 /**
@@ -52,14 +68,17 @@ export interface SearchResult {
  */
 export interface GetLastChatsListInput {
   feedbackLevel?: FeedbackLevel;
+  scope?: StorageScope;
 }
 
 export interface SearchByTitleInput {
   keywords: string[];
   feedbackLevel?: FeedbackLevel;
+  scope?: StorageScope;
 }
 
 export interface SearchByMetaInput {
   keywords: string[];
   feedbackLevel?: FeedbackLevel;
+  scope?: StorageScope;
 }

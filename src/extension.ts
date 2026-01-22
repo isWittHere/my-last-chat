@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ChatStorageService } from './storage';
-import { ChatListViewProvider } from './webview';
+import { ChatListViewProvider, ChatListPanel } from './webview';
 import { registerTools } from './tools';
 
 let chatListProvider: ChatListViewProvider;
@@ -64,15 +64,68 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // 注册在编辑器中打开面板命令
+  context.subscriptions.push(
+    vscode.commands.registerCommand('myLastChat.openInEditor', () => {
+      ChatListPanel.createOrShow(context.extensionUri, storageService);
+    })
+  );
+
+  // 注册从编辑器面板创建新摘要命令
+  context.subscriptions.push(
+    vscode.commands.registerCommand('myLastChat.createNewFromPanel', async () => {
+      const filePath = await storageService.createNewChatSummary();
+      if (filePath) {
+        const document = await vscode.workspace.openTextDocument(filePath);
+        await vscode.window.showTextDocument(document, {
+          viewColumn: vscode.ViewColumn.Active,
+          preserveFocus: false
+        });
+        // 刷新面板列表
+        if (ChatListPanel.currentPanel) {
+          ChatListPanel.currentPanel.refresh();
+        }
+      } else {
+        vscode.window.showErrorMessage('创建聊天摘要失败');
+      }
+    })
+  );
+
   // 注册LM工具供Copilot调用
   registerTools(context);
 
   // 监听文件变化以自动刷新
-  const watcher = vscode.workspace.createFileSystemWatcher('**/.myLastChat/*.md');
-  watcher.onDidCreate(() => chatListProvider.refresh());
-  watcher.onDidChange(() => chatListProvider.refresh());
-  watcher.onDidDelete(() => chatListProvider.refresh());
+  const storagePath = storageService.getStoragePath();
+  const watcher = vscode.workspace.createFileSystemWatcher(
+    new vscode.RelativePattern(storagePath, '*.md')
+  );
+  
+  const debouncedRefresh = debounce(() => chatListProvider.refresh(), 300);
+  
+  watcher.onDidCreate(() => debouncedRefresh());
+  watcher.onDidChange(() => debouncedRefresh());
+  watcher.onDidDelete(() => debouncedRefresh());
   context.subscriptions.push(watcher);
+  
+  // 也监听文档保存事件
+  context.subscriptions.push(
+    vscode.workspace.onDidSaveTextDocument((doc) => {
+      if (doc.fileName.includes('.myLastChat') && doc.fileName.endsWith('.md')) {
+        debouncedRefresh();
+      }
+    })
+  );
+}
+
+// 防抖函数
+function debounce(fn: () => void, delay: number): () => void {
+  let timer: NodeJS.Timeout | undefined;
+  return () => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(fn, delay);
+  };
 }
 
 export function deactivate() {

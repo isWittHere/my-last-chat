@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import matter from 'gray-matter';
-import { ChatMetadata, ChatSummary, FeedbackLevel, SearchResult } from './types';
+import { ChatMetadata, ChatSummary, FeedbackLevel, SearchResult, StorageScope } from './types';
 
 /**
  * 聊天摘要存储服务
@@ -24,52 +24,69 @@ export class ChatStorageService {
   }
 
   /**
-   * 获取存储路径
+   * 获取工作区存储路径
+   */
+  getWorkspaceStoragePath(): string | null {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+      return path.join(workspaceFolders[0].uri.fsPath, '.myLastChat');
+    }
+    return null;
+  }
+
+  /**
+   * 获取全局存储路径
+   */
+  getGlobalStoragePath(): string {
+    const config = vscode.workspace.getConfiguration('myLastChat');
+    const globalPath = config.get<string>('globalStoragePath');
+    if (globalPath && globalPath.trim() !== '') {
+      return path.join(globalPath, '.myLastChat');
+    }
+    return path.join(this.context.globalStorageUri.fsPath, '.myLastChat');
+  }
+
+  /**
+   * 获取存储路径（基于配置）
    */
   getStoragePath(): string {
     const config = vscode.workspace.getConfiguration('myLastChat');
     const storageLocation = config.get<string>('storageLocation', 'workspace');
 
     if (storageLocation === 'global') {
-      const globalPath = config.get<string>('globalStoragePath');
-      if (globalPath && globalPath.trim() !== '') {
-        return path.join(globalPath, '.myLastChat');
-      }
-      // 使用VSCode的全局存储路径
-      return path.join(this.context.globalStorageUri.fsPath, '.myLastChat');
+      return this.getGlobalStoragePath();
     }
 
     // 工作区存储
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (workspaceFolders && workspaceFolders.length > 0) {
-      return path.join(workspaceFolders[0].uri.fsPath, '.myLastChat');
+    const workspacePath = this.getWorkspaceStoragePath();
+    if (workspacePath) {
+      return workspacePath;
     }
 
     // 回退到全局存储
-    return path.join(this.context.globalStorageUri.fsPath, '.myLastChat');
+    return this.getGlobalStoragePath();
   }
 
   /**
    * 确保存储目录存在
    */
-  async ensureStorageDirectory(): Promise<void> {
-    const storagePath = this.getStoragePath();
+  async ensureStorageDirectory(storagePath?: string): Promise<void> {
+    const targetPath = storagePath || this.getStoragePath();
     try {
-      await fs.promises.mkdir(storagePath, { recursive: true });
+      await fs.promises.mkdir(targetPath, { recursive: true });
     } catch (error) {
       console.error('Failed to create storage directory:', error);
     }
   }
 
   /**
-   * 获取所有聊天摘要文件
+   * 从指定路径获取所有聊天摘要文件
    */
-  async getAllChatSummaries(): Promise<ChatSummary[]> {
-    const storagePath = this.getStoragePath();
+  async getChatSummariesFromPath(storagePath: string, scope: StorageScope): Promise<ChatSummary[]> {
     const summaries: ChatSummary[] = [];
 
     try {
-      await this.ensureStorageDirectory();
+      await this.ensureStorageDirectory(storagePath);
       const files = await fs.promises.readdir(storagePath);
       const mdFiles = files.filter(file => file.endsWith('.md'));
 
@@ -77,11 +94,39 @@ export class ChatStorageService {
         const filePath = path.join(storagePath, file);
         const summary = await this.parseChatFile(filePath);
         if (summary) {
+          (summary as any).scope = scope;
           summaries.push(summary);
         }
       }
     } catch (error) {
-      console.error('Failed to read chat summaries:', error);
+      // 目录不存在时静默失败
+    }
+
+    return summaries;
+  }
+
+  /**
+   * 获取所有聊天摘要文件（根据 scope）
+   */
+  async getAllChatSummaries(scope: StorageScope = 'all'): Promise<ChatSummary[]> {
+    const summaries: ChatSummary[] = [];
+
+    if (scope === 'workspace' || scope === 'all') {
+      const workspacePath = this.getWorkspaceStoragePath();
+      if (workspacePath) {
+        const workspaceSummaries = await this.getChatSummariesFromPath(workspacePath, 'workspace');
+        summaries.push(...workspaceSummaries);
+      }
+    }
+
+    if (scope === 'global' || scope === 'all') {
+      const globalPath = this.getGlobalStoragePath();
+      // 避免重复（如果工作区路径和全局路径相同）
+      const workspacePath = this.getWorkspaceStoragePath();
+      if (globalPath !== workspacePath) {
+        const globalSummaries = await this.getChatSummariesFromPath(globalPath, 'global');
+        summaries.push(...globalSummaries);
+      }
     }
 
     return summaries;
@@ -94,6 +139,9 @@ export class ChatStorageService {
     try {
       const content = await fs.promises.readFile(filePath, 'utf-8');
       const parsed = matter(content);
+      
+      // Get file stats for timestamps
+      const stats = await fs.promises.stat(filePath);
 
       const metadata: ChatMetadata = {
         title: parsed.data.title || path.basename(filePath, '.md'),
@@ -102,6 +150,10 @@ export class ChatStorageService {
         project: parsed.data.project,
         type: parsed.data.type,
         solved_lists: parsed.data.solved_lists,
+        createdAt: parsed.data.createdAt || stats.birthtime.toISOString(),
+        updatedAt: parsed.data.updatedAt || stats.mtime.toISOString(),
+        favorite: parsed.data.favorite || false,
+        tags: parsed.data.tags || [],
       };
 
       return {
@@ -147,8 +199,8 @@ export class ChatStorageService {
   /**
    * 通过标题搜索
    */
-  async searchByTitle(keywords: string[], feedbackLevel: FeedbackLevel = 'DESCRIPTION'): Promise<SearchResult[]> {
-    const summaries = await this.getAllChatSummaries();
+  async searchByTitle(keywords: string[], feedbackLevel: FeedbackLevel = 'DESCRIPTION', scope: StorageScope = 'all'): Promise<SearchResult[]> {
+    const summaries = await this.getAllChatSummaries(scope);
     const results: SearchResult[] = [];
 
     for (const summary of summaries) {
@@ -158,7 +210,9 @@ export class ChatStorageService {
       );
 
       if (matched) {
-        results.push(this.formatResult(summary, feedbackLevel));
+        const result = this.formatResult(summary, feedbackLevel);
+        result.scope = (summary as any).scope;
+        results.push(result);
       }
     }
 
@@ -168,8 +222,8 @@ export class ChatStorageService {
   /**
    * 通过元数据搜索
    */
-  async searchByMeta(keywords: string[], feedbackLevel: FeedbackLevel = 'META'): Promise<SearchResult[]> {
-    const summaries = await this.getAllChatSummaries();
+  async searchByMeta(keywords: string[], feedbackLevel: FeedbackLevel = 'META', scope: StorageScope = 'all'): Promise<SearchResult[]> {
+    const summaries = await this.getAllChatSummaries(scope);
     const results: SearchResult[] = [];
 
     for (const summary of summaries) {
@@ -188,7 +242,9 @@ export class ChatStorageService {
       );
 
       if (matched) {
-        results.push(this.formatResult(summary, feedbackLevel));
+        const result = this.formatResult(summary, feedbackLevel);
+        result.scope = (summary as any).scope;
+        results.push(result);
       }
     }
 
@@ -198,17 +254,25 @@ export class ChatStorageService {
   /**
    * 获取聊天列表
    */
-  async getLastChatsList(feedbackLevel: FeedbackLevel = 'DESCRIPTION'): Promise<SearchResult[]> {
-    const summaries = await this.getAllChatSummaries();
-    return summaries.map(summary => this.formatResult(summary, feedbackLevel));
+  async getLastChatsList(feedbackLevel: FeedbackLevel = 'DESCRIPTION', scope: StorageScope = 'all'): Promise<SearchResult[]> {
+    const summaries = await this.getAllChatSummaries(scope);
+    return summaries.map(summary => {
+      const result = this.formatResult(summary, feedbackLevel);
+      result.scope = (summary as any).scope;
+      return result;
+    });
   }
 
   /**
    * 创建新的聊天摘要文件
+   * 优先创建到工作区，如果没有工作区则创建到全局
    */
   async createNewChatSummary(): Promise<string | null> {
-    const storagePath = this.getStoragePath();
-    await this.ensureStorageDirectory();
+    // 优先使用工作区路径
+    const workspacePath = this.getWorkspaceStoragePath();
+    const storagePath = workspacePath || this.getGlobalStoragePath();
+    
+    await this.ensureStorageDirectory(storagePath);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = `chat-${timestamp}.md`;
@@ -219,12 +283,17 @@ export class ChatStorageService {
       ? workspaceFolders[0].uri.fsPath 
       : '';
 
+    const now = new Date().toISOString();
     const template = `---
 title: 新聊天摘要
 description: 请填写聊天描述
 workplace: ${defaultWorkplace}
 project: 
 type: 
+createdAt: ${now}
+updatedAt: ${now}
+favorite: false
+tags: []
 solved_lists:
   - 
 ---
@@ -240,6 +309,42 @@ solved_lists:
     } catch (error) {
       console.error('Failed to create new chat summary:', error);
       return null;
+    }
+  }
+
+  /**
+   * 切换收藏状态
+   */
+  async toggleFavorite(filePath: string): Promise<boolean> {
+    try {
+      const content = await fs.promises.readFile(filePath, 'utf-8');
+      const parsed = matter(content);
+      
+      // 切换收藏状态
+      parsed.data.favorite = !parsed.data.favorite;
+      parsed.data.updatedAt = new Date().toISOString();
+      
+      // 重新生成文件内容
+      const newContent = matter.stringify(parsed.content, parsed.data);
+      await fs.promises.writeFile(filePath, newContent, 'utf-8');
+      
+      return parsed.data.favorite;
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 删除聊天文件
+   */
+  async deleteChatFile(filePath: string): Promise<boolean> {
+    try {
+      await fs.promises.unlink(filePath);
+      return true;
+    } catch (error) {
+      console.error('Failed to delete chat file:', error);
+      return false;
     }
   }
 }

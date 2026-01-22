@@ -62,6 +62,18 @@
         "command": "myLastChat.openFile",
         "title": "打开聊天摘要文件",
         "category": "My Last Chat"
+      },
+      {
+        "command": "myLastChat.openInEditor",
+        "title": "在编辑器中打开聊天列表",
+        "icon": "$(window)",
+        "category": "My Last Chat"
+      },
+      {
+        "command": "myLastChat.createNewFromPanel",
+        "title": "新建聊天摘要",
+        "icon": "$(add)",
+        "category": "My Last Chat"
       }
     ],
     "menus": {
@@ -80,6 +92,18 @@
           "command": "myLastChat.openSettings",
           "when": "view == myLastChat.chatListView",
           "group": "navigation@3"
+        },
+        {
+          "command": "myLastChat.openInEditor",
+          "when": "view == myLastChat.chatListView",
+          "group": "navigation@4"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "myLastChat.createNewFromPanel",
+          "when": "activeWebviewPanelId == myLastChat.chatListPanel",
+          "group": "navigation@1"
         }
       ]
     },
@@ -108,7 +132,9 @@
         "displayName": "Get Last Chats List",
         "toolReferenceName": "lastchats",
         "description": "获取所有聊天摘要的列表，返回标题、描述和元数据信息",
-        "modelDescription": "Get a list of all chat summaries stored in the My Last Chat extension. Returns titles, descriptions, and metadata of saved chat history summaries.",
+        "modelDescription": "Get a list of all chat summaries stored in the My Last Chat extension. Returns titles, descriptions, and metadata of saved chat history summaries. Use scope parameter to specify workspace, global, or all.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(comment-discussion)",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -122,6 +148,16 @@
               ],
               "default": "DESCRIPTION",
               "description": "返回信息的详细程度：TITLE_ONLY(仅标题), DESCRIPTION(标题+描述), META(所有元数据), ALL(全文)"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "workspace",
+                "global",
+                "all"
+              ],
+              "default": "all",
+              "description": "搜索范围：workspace(仅工作区), global(仅全局), all(全部)"
             }
           }
         },
@@ -136,7 +172,9 @@
         "displayName": "Search Chats by Title",
         "toolReferenceName": "searchchat",
         "description": "通过关键词匹配标题搜索聊天摘要",
-        "modelDescription": "Search chat summaries by matching keywords in the title. Supports multiple keywords to expand search scope.",
+        "modelDescription": "Search chat summaries by matching keywords in the title. Supports multiple keywords to expand search scope. Use scope parameter to filter by workspace, global, or all.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(search)",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -157,6 +195,16 @@
               ],
               "default": "DESCRIPTION",
               "description": "返回信息的详细程度"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "workspace",
+                "global",
+                "all"
+              ],
+              "default": "all",
+              "description": "搜索范围：workspace(仅工作区), global(仅全局), all(全部)"
             }
           },
           "required": [
@@ -174,7 +222,9 @@
         "displayName": "Search Chats by Metadata",
         "toolReferenceName": "searchmeta",
         "description": "通过匹配元数据关键词搜索聊天摘要",
-        "modelDescription": "Search chat summaries by matching keywords across all metadata fields including title, description, workplace, project, type, and solved_lists.",
+        "modelDescription": "Search chat summaries by matching keywords across all metadata fields including title, description, workplace, project, type, and solved_lists. Use scope parameter to filter by workspace, global, or all.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(file-code)",
         "inputSchema": {
           "type": "object",
           "properties": {
@@ -195,6 +245,16 @@
               ],
               "default": "META",
               "description": "返回信息的详细程度"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "workspace",
+                "global",
+                "all"
+              ],
+              "default": "all",
+              "description": "搜索范围：workspace(仅工作区), global(仅全局), all(全部)"
             }
           },
           "required": [
@@ -228,6 +288,7 @@
     "typescript": "^5.6.0"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.44",
     "gray-matter": "^4.0.3"
   }
 }

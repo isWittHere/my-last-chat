@@ -4,7 +4,8 @@ import {
   GetLastChatsListInput, 
   SearchByTitleInput, 
   SearchByMetaInput,
-  FeedbackLevel 
+  FeedbackLevel,
+  StorageScope
 } from './types';
 
 /**
@@ -17,9 +18,10 @@ export class GetLastChatsListTool implements vscode.LanguageModelTool<GetLastCha
   ): Promise<vscode.LanguageModelToolResult> {
     const storageService = ChatStorageService.getInstance();
     const feedbackLevel: FeedbackLevel = options.input.feedbackLevel || 'DESCRIPTION';
+    const scope: StorageScope = options.input.scope || 'all';
     
     try {
-      const results = await storageService.getLastChatsList(feedbackLevel);
+      const results = await storageService.getLastChatsList(feedbackLevel, scope);
       
       if (results.length === 0) {
         return new vscode.LanguageModelToolResult([
@@ -44,6 +46,9 @@ export class GetLastChatsListTool implements vscode.LanguageModelTool<GetLastCha
     for (const result of results) {
       output += `## ${result.title}\n`;
       output += `文件: ${result.fileName}\n`;
+      if (result.scope) {
+        output += `范围: ${result.scope === 'workspace' ? '工作区' : '全局'}\n`;
+      }
       
       if (level !== 'TITLE_ONLY' && result.description) {
         output += `描述: ${result.description}\n`;
@@ -87,7 +92,7 @@ export class SearchByTitleTool implements vscode.LanguageModelTool<SearchByTitle
     _token: vscode.CancellationToken
   ): Promise<vscode.LanguageModelToolResult> {
     const storageService = ChatStorageService.getInstance();
-    const { keywords, feedbackLevel = 'DESCRIPTION' } = options.input;
+    const { keywords, feedbackLevel = 'DESCRIPTION', scope = 'all' } = options.input;
     
     if (!keywords || keywords.length === 0) {
       return new vscode.LanguageModelToolResult([
@@ -96,7 +101,7 @@ export class SearchByTitleTool implements vscode.LanguageModelTool<SearchByTitle
     }
 
     try {
-      const results = await storageService.searchByTitle(keywords, feedbackLevel);
+      const results = await storageService.searchByTitle(keywords, feedbackLevel, scope);
       
       if (results.length === 0) {
         return new vscode.LanguageModelToolResult([
@@ -122,6 +127,9 @@ export class SearchByTitleTool implements vscode.LanguageModelTool<SearchByTitle
     for (const result of results) {
       output += `## ${result.title}\n`;
       output += `文件: ${result.fileName}\n`;
+      if (result.scope) {
+        output += `范围: ${result.scope === 'workspace' ? '工作区' : '全局'}\n`;
+      }
       
       if (level !== 'TITLE_ONLY' && result.description) {
         output += `描述: ${result.description}\n`;
@@ -165,7 +173,7 @@ export class SearchByMetaTool implements vscode.LanguageModelTool<SearchByMetaIn
     _token: vscode.CancellationToken
   ): Promise<vscode.LanguageModelToolResult> {
     const storageService = ChatStorageService.getInstance();
-    const { keywords, feedbackLevel = 'META' } = options.input;
+    const { keywords, feedbackLevel = 'META', scope = 'all' } = options.input;
     
     if (!keywords || keywords.length === 0) {
       return new vscode.LanguageModelToolResult([
@@ -174,7 +182,7 @@ export class SearchByMetaTool implements vscode.LanguageModelTool<SearchByMetaIn
     }
 
     try {
-      const results = await storageService.searchByMeta(keywords, feedbackLevel);
+      const results = await storageService.searchByMeta(keywords, feedbackLevel, scope);
       
       if (results.length === 0) {
         return new vscode.LanguageModelToolResult([
@@ -200,6 +208,9 @@ export class SearchByMetaTool implements vscode.LanguageModelTool<SearchByMetaIn
     for (const result of results) {
       output += `## ${result.title}\n`;
       output += `文件: ${result.fileName}\n`;
+      if (result.scope) {
+        output += `范围: ${result.scope === 'workspace' ? '工作区' : '全局'}\n`;
+      }
       
       if (level !== 'TITLE_ONLY' && result.description) {
         output += `描述: ${result.description}\n`;
