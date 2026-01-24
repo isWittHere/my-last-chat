@@ -473,14 +473,14 @@ export function getControlsHtml(placeholder: string = '搜索...'): string {
             <div class="custom-select-option" data-value="spec">Spec</div>
           </div>
         </div>
-        <div class="custom-select" id="scopeSelect" data-value="all">
+        <div class="custom-select" id="scopeSelect" data-value="workspace">
           <button class="custom-select-btn">
-            <span class="select-text">全部范围</span>
+            <span class="select-text">仅工作区</span>
             <span class="codicon codicon-chevron-down"></span>
           </button>
           <div class="custom-select-dropdown">
-            <div class="custom-select-option selected" data-value="all">全部范围</div>
-            <div class="custom-select-option" data-value="workspace">仅工作区</div>
+            <div class="custom-select-option" data-value="all">全部范围</div>
+            <div class="custom-select-option selected" data-value="workspace">仅工作区</div>
             <div class="custom-select-option" data-value="global">仅全局</div>
           </div>
         </div>
@@ -734,7 +734,66 @@ export function getSharedScript(): string {
       }
     }
     
+    // 保存筛选器状态
+    function saveFilterState() {
+      const state = {
+        query: searchInput.value,
+        filter: filterSelect.dataset.value,
+        scope: scopeSelect.dataset.value,
+        showFavoritesOnly: favOnly.checked,
+        sortBy: sortSelect.dataset.value
+      };
+      vscode.setState(state);
+    }
+    
+    // 恢复筛选器状态
+    function restoreFilterState() {
+      const state = vscode.getState();
+      if (state) {
+        searchInput.value = state.query || '';
+        
+        if (state.filter) {
+          filterSelect.dataset.value = state.filter;
+          const filterText = filterSelect.querySelector('.select-text');
+          const filterOpt = filterSelect.querySelector('[data-value="' + state.filter + '"]');
+          if (filterOpt && filterText) {
+            filterText.textContent = filterOpt.textContent;
+            filterSelect.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+            filterOpt.classList.add('selected');
+          }
+        }
+        
+        if (state.scope) {
+          scopeSelect.dataset.value = state.scope;
+          const scopeText = scopeSelect.querySelector('.select-text');
+          const scopeOpt = scopeSelect.querySelector('[data-value="' + state.scope + '"]');
+          if (scopeOpt && scopeText) {
+            scopeText.textContent = scopeOpt.textContent;
+            scopeSelect.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+            scopeOpt.classList.add('selected');
+          }
+        }
+        
+        if (state.sortBy) {
+          sortSelect.dataset.value = state.sortBy;
+          const sortText = sortSelect.querySelector('.select-text');
+          const sortOpt = sortSelect.querySelector('[data-value="' + state.sortBy + '"]');
+          if (sortOpt && sortText) {
+            sortText.textContent = sortOpt.textContent;
+            sortSelect.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+            sortOpt.classList.add('selected');
+          }
+        }
+        
+        if (state.showFavoritesOnly) {
+          favOnly.checked = true;
+          updateFavIcon();
+        }
+      }
+    }
+    
     function doSearch() {
+      saveFilterState();
       vscode.postMessage({
         type: 'search',
         query: searchInput.value,
@@ -783,6 +842,10 @@ export function getSharedScript(): string {
     
     window.addEventListener('message', e => {
       if (e.data.type === 'updateList') render(e.data.data);
+      if (e.data.type === 'triggerSearch') {
+        // 后端请求刷新，使用当前筛选状态重新搜索
+        doSearch();
+      }
       if (e.data.type === 'settings') {
         autoHideControlsEnabled = e.data.autoHideControls || false;
         // 如果禁用了自动隐藏，确保控制区域显示
@@ -790,6 +853,19 @@ export function getSharedScript(): string {
           const controlsArea = $('controlsArea');
           if (controlsArea) controlsArea.classList.remove('hidden');
         }
+      }
+      if (e.data.type === 'updateScope') {
+        // 更新范围选择器
+        const newScope = e.data.scope;
+        scopeSelect.dataset.value = newScope;
+        const scopeText = scopeSelect.querySelector('.select-text');
+        const scopeOpt = scopeSelect.querySelector('[data-value="' + newScope + '"]');
+        if (scopeOpt && scopeText) {
+          scopeText.textContent = scopeOpt.textContent;
+          scopeSelect.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+          scopeOpt.classList.add('selected');
+        }
+        saveFilterState();
       }
     });
     
@@ -935,7 +1011,17 @@ export function getSharedScript(): string {
       });
     }
     
-    vscode.postMessage({ type: 'ready' });
+    // 恢复之前的筛选器状态
+    restoreFilterState();
+    
+    // 发送 ready 消息，包含当前的筛选器状态
+    vscode.postMessage({ 
+      type: 'ready',
+      filter: filterSelect.dataset.value,
+      scope: scopeSelect.dataset.value,
+      showFavoritesOnly: favOnly.checked,
+      sortBy: sortSelect.dataset.value
+    });
   `;
 }
 
