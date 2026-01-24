@@ -4,6 +4,10 @@
   "description": "Agent对话历史摘要管理器 - 管理和搜索您的AI聊天记录摘要",
   "version": "0.0.5",
   "publisher": "my-last-chat",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isWittHere/my-last-chat.git"
+  },
   "engines": {
     "vscode": "^1.95.0"
   },
