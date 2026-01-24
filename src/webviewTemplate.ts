@@ -282,7 +282,6 @@ export function getSharedStyles(isPanel: boolean = false): string {
       gap: 4px;
     }
     .chat-item:hover { background: var(--vscode-list-hoverBackground); }
-    .chat-item:hover .item-actions { opacity: 1; }
     
     /* 左侧图标列 */
     .item-icon {
@@ -384,7 +383,6 @@ export function getSharedStyles(isPanel: boolean = false): string {
     .item-actions {
       display: flex;
       gap: 2px;
-      opacity: 0;
       transition: opacity 0.1s;
     }
     .act-btn {
@@ -397,20 +395,47 @@ export function getSharedStyles(isPanel: boolean = false): string {
       display: flex;
       align-items: center;
       justify-content: center;
+      opacity: 0;
+      transition: opacity 0.1s;
     }
     .act-btn .codicon { font-size: 14px; }
     .act-btn:hover { background: var(--vscode-toolbar-hoverBackground); color: var(--vscode-foreground); }
     .act-btn.fav.active { color: #f59e0b; }
     .act-btn.del:hover { color: #f44336; }
+    /* 卡片hover时显示其他按钮 */
+    .chat-item:hover .act-btn {
+      opacity: 1;
+    }
+    /* 插入按钮默认只显示图标 - 始终可见 */
     .act-btn.attach {
+      opacity: 1;
+      background: none;
+      color: var(--vscode-descriptionForeground);
+      padding: 2px 4px;
+      border-radius: 2px;
+      transition: all 0.15s;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .act-btn.attach .btn-text {
+      max-width: 0;
+      opacity: 0;
+      display: inline-block;
+      overflow: hidden;
+      transition: all 0.15s;
+      margin-left: 0;
+    }
+    /* 卡片hover时显示完整按钮样式 */
+    .chat-item:hover .act-btn.attach {
       background: var(--vscode-button-background);
       color: var(--vscode-button-foreground);
       padding: 2px 8px;
       border-radius: 3px;
     }
-    .act-btn.attach:hover {
-      background: var(--vscode-button-hoverBackground);
-      color: var(--vscode-button-foreground);
+    .chat-item:hover .act-btn.attach .btn-text {
+      max-width: 100px;
+      opacity: 1;
+      margin-left: 4px;
     }
     
     /* 空状态 */
