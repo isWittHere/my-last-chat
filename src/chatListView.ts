@@ -41,6 +41,19 @@ export class ChatListViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
+   * 发送设置到 webview
+   */
+  private _sendSettings(): void {
+    if (this._view) {
+      const config = vscode.workspace.getConfiguration('myLastChat');
+      this._view.webview.postMessage({
+        type: 'settings',
+        autoHideControls: config.get('autoHideControls', false)
+      });
+    }
+  }
+
+  /**
    * 处理来自 WebView 的消息
    */
   private async _handleMessage(data: any): Promise<void> {
@@ -57,6 +70,8 @@ export class ChatListViewProvider implements vscode.WebviewViewProvider {
         break;
       case 'ready':
         await this.refresh();
+        // 发送设置给 webview
+        this._sendSettings();
         break;
       case 'toggleFavorite':
         await this._storageService.toggleFavorite(data.filePath);

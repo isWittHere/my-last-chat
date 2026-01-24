@@ -48,14 +48,39 @@ export function getSharedStyles(isPanel: boolean = false): string {
   
   return `
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
     body {
       font-family: var(--vscode-font-family);
       font-size: var(--vscode-font-size);
       color: var(--vscode-foreground);
       background: ${backgroundColor};
       user-select: none;
+      display: flex;
+      flex-direction: column;
     }
-    .container { padding: 6px; }
+    .container { 
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    /* 顶部控件区域 - 支持自动隐藏 */
+    .controls-area {
+      transition: transform 0.2s ease, opacity 0.2s ease, max-height 0.2s ease;
+      transform-origin: top;
+    }
+    .controls-area.hidden {
+      transform: translateY(-100%);
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      margin-bottom: 0;
+    }
     
     /* 搜索框 */
     .search-box { margin-bottom: 6px; }
@@ -167,9 +192,65 @@ export function getSharedStyles(isPanel: boolean = false): string {
     .fav-filter .codicon { font-size: 12px; color: var(--vscode-descriptionForeground); }
     .fav-filter input:checked + .codicon { color: #f59e0b; }
     
-    /* 列表 */
-    .chat-list { list-style: none; }
+    /* 列表 - 隐藏原生滚动条 */
+    .chat-list { 
+      list-style: none;
+      overflow-y: scroll;
+      flex: 1;
+      min-height: 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding-right: 10px; /* 给滚动条留出空间 */
+    }
+    .chat-list::-webkit-scrollbar {
+      display: none;
+    }
     
+    /* 列表容器 - 用于定位滚动条 */
+    .list-wrapper {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      margin-right: -6px; /* 抵消container的padding */
+    }
+    
+    /* 自定义滚动条轨道 */
+    .scrollbar-track {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 14px;
+      height: 100%;
+      background: transparent;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 100;
+      pointer-events: auto;
+    }
+    .scrollbar-track.visible {
+      opacity: 1;
+    }
+    
+    /* 自定义滚动条滑块 */
+    .scrollbar-thumb {
+      position: absolute;
+      right: 2px;
+      width: 6px;
+      min-height: 30px;
+      background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+      border-radius: 0;
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+    .scrollbar-thumb:hover {
+      background: var(--vscode-scrollbarSlider-hoverBackground, rgba(121, 121, 121, 0.7));
+    }
+    .scrollbar-thumb.dragging {
+      background: var(--vscode-scrollbarSlider-activeBackground, rgba(121, 121, 121, 0.9));
+    }
+
     /* 分组标题 */
     .group-header {
       position: sticky;
@@ -197,9 +278,35 @@ export function getSharedStyles(isPanel: boolean = false): string {
       background: transparent;
       border-radius: 4px;
       transition: background 0.1s;
+      display: flex;
+      gap: 4px;
     }
     .chat-item:hover { background: var(--vscode-list-hoverBackground); }
     .chat-item:hover .item-actions { opacity: 1; }
+    
+    /* 左侧图标列 */
+    .item-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+    .item-icon.codicon-code { color: #4fc3f7; }
+    .item-icon.codicon-bug { color: #ef5350; }
+    .item-icon.codicon-checklist { color: #66bb6a; }
+    .item-icon.codicon-file-text { color: #ab47bc; }
+    .item-icon.codicon-comment-discussion { color: var(--vscode-descriptionForeground); }
+    
+    /* 右侧内容列 */
+    .item-content {
+      flex: 1;
+      min-width: 0;
+    }
     
     /* 标题 */
     .item-title {
@@ -208,23 +315,12 @@ export function getSharedStyles(isPanel: boolean = false): string {
       line-height: 1.4;
       margin-bottom: 3px;
       color: var(--vscode-foreground);
-      display: flex;
-      align-items: center;
-      gap: 6px;
       cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .item-title:hover { color: var(--vscode-textLink-foreground); }
-    .item-title:hover .title-text { text-decoration: underline; }
-    .title-icon {
-      flex-shrink: 0;
-      font-size: 14px;
-      opacity: 0.8;
-    }
-    .title-icon.codicon-code { color: var(--vscode-descriptionForeground); }
-    .title-icon.codicon-bug { color: var(--vscode-descriptionForeground); }
-    .title-icon.codicon-checklist { color: var(--vscode-descriptionForeground); }
-    .title-icon.codicon-file-text { color: var(--vscode-descriptionForeground); }
-    .title-icon.codicon-comment-discussion { color: var(--vscode-descriptionForeground); }
+    .item-title:hover { color: var(--vscode-textLink-foreground); text-decoration: underline; }
     
     /* 描述 */
     .item-desc {
@@ -239,6 +335,35 @@ export function getSharedStyles(isPanel: boolean = false): string {
       -webkit-box-orient: vertical;
     }
     
+    /* 标签行 */
+    .item-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+      margin-bottom: 2px;
+    }
+    .item-tag {
+      background: var(--vscode-badge-background);
+      color: var(--vscode-badge-foreground);
+      padding: 0 4px;
+      border-radius: 2px;
+      font-weight: 350;
+      font-size: 9px;
+    }
+    .item-type {
+      padding: 0 4px;
+      border-radius: 2px;
+      font-weight: 350;
+      text-transform: uppercase;
+      font-size: 9px;
+      display: none; /* 暂时隐藏 */
+    }
+    .item-type.coding { background: #197fb2; color: #fff; }
+    .item-type.debug { background: #a83b34; color: #fff; }
+    .item-type.planning { background: #2c7e49; color: #fff; }
+    .item-type.spec { background: #6a1f8f; color: #fff; }
+    
     /* 底部元信息行 */
     .item-meta {
       display: flex;
@@ -252,27 +377,8 @@ export function getSharedStyles(isPanel: boolean = false): string {
       gap: 4px;
       flex: 1;
       min-width: 0;
-      flex-wrap: wrap;
     }
     .item-time { color: var(--vscode-descriptionForeground); white-space: nowrap; }
-    .item-tag {
-      background: var(--vscode-badge-background);
-      color: var(--vscode-badge-foreground);
-      padding: 0 4px;
-      border-radius: 2px;
-      font-size: 9px;
-    }
-    .item-type {
-      padding: 0 4px;
-      border-radius: 2px;
-      font-weight: 500;
-      text-transform: uppercase;
-      font-size: 9px;
-    }
-    .item-type.coding { background: #197fb2; color: #fff; }
-    .item-type.debug { background: #a83b34; color: #fff; }
-    .item-type.planning { background: #2c7e49; color: #fff; }
-    .item-type.spec { background: #6a1f8f; color: #fff; }
     
     /* 操作按钮 */
     .item-actions {
@@ -323,61 +429,65 @@ export function getSharedStyles(isPanel: boolean = false): string {
  */
 export function getControlsHtml(placeholder: string = '搜索...'): string {
   return `
-    <div class="search-box">
-      <input type="text" class="search-input" id="searchInput" placeholder="${placeholder}">
+    <div class="controls-area" id="controlsArea">
+      <div class="search-box">
+        <input type="text" class="search-input" id="searchInput" placeholder="${placeholder}">
+      </div>
+      
+      <div class="controls-row">
+        <div class="custom-select" id="filterSelect" data-value="all">
+          <button class="custom-select-btn">
+            <span class="select-text">全部类型</span>
+            <span class="codicon codicon-chevron-down"></span>
+          </button>
+          <div class="custom-select-dropdown">
+            <div class="custom-select-option selected" data-value="all">全部类型</div>
+            <div class="custom-select-option" data-value="coding">Coding</div>
+            <div class="custom-select-option" data-value="debug">Debug</div>
+            <div class="custom-select-option" data-value="planning">Planning</div>
+            <div class="custom-select-option" data-value="spec">Spec</div>
+          </div>
+        </div>
+        <div class="custom-select" id="scopeSelect" data-value="all">
+          <button class="custom-select-btn">
+            <span class="select-text">全部范围</span>
+            <span class="codicon codicon-chevron-down"></span>
+          </button>
+          <div class="custom-select-dropdown">
+            <div class="custom-select-option selected" data-value="all">全部范围</div>
+            <div class="custom-select-option" data-value="workspace">仅工作区</div>
+            <div class="custom-select-option" data-value="global">仅全局</div>
+          </div>
+        </div>
+        <div class="custom-select" id="sortSelect" data-value="updated-desc">
+          <button class="custom-select-btn">
+            <span class="select-text">最近更新</span>
+            <span class="codicon codicon-chevron-down"></span>
+          </button>
+          <div class="custom-select-dropdown">
+            <div class="custom-select-option selected" data-value="updated-desc">最近更新</div>
+            <div class="custom-select-option" data-value="created-desc">最新创建</div>
+            <div class="custom-select-option" data-value="created-asc">最早创建</div>
+            <div class="custom-select-option" data-value="title-asc">标题 A-Z</div>
+            <div class="custom-select-option" data-value="title-desc">标题 Z-A</div>
+          </div>
+        </div>
+        <label class="fav-filter">
+          <input type="checkbox" id="favOnly" style="display:none;">
+          <span class="codicon codicon-star-empty"></span>
+          <span>仅收藏</span>
+        </label>
+      </div>
     </div>
     
-    <div class="controls-row">
-      <div class="custom-select" id="filterSelect" data-value="all">
-        <button class="custom-select-btn">
-          <span class="select-text">全部类型</span>
-          <span class="codicon codicon-chevron-down"></span>
-        </button>
-        <div class="custom-select-dropdown">
-          <div class="custom-select-option selected" data-value="all">全部类型</div>
-          <div class="custom-select-option" data-value="coding">Coding</div>
-          <div class="custom-select-option" data-value="debug">Debug</div>
-          <div class="custom-select-option" data-value="planning">Planning</div>
-          <div class="custom-select-option" data-value="spec">Spec</div>
-        </div>
-      </div>
-      <div class="custom-select" id="scopeSelect" data-value="all">
-        <button class="custom-select-btn">
-          <span class="select-text">全部范围</span>
-          <span class="codicon codicon-chevron-down"></span>
-        </button>
-        <div class="custom-select-dropdown">
-          <div class="custom-select-option selected" data-value="all">全部范围</div>
-          <div class="custom-select-option" data-value="workspace">仅工作区</div>
-          <div class="custom-select-option" data-value="global">仅全局</div>
-        </div>
-      </div>
-      <div class="custom-select" id="sortSelect" data-value="updated-desc">
-        <button class="custom-select-btn">
-          <span class="select-text">最近更新</span>
-          <span class="codicon codicon-chevron-down"></span>
-        </button>
-        <div class="custom-select-dropdown">
-          <div class="custom-select-option selected" data-value="updated-desc">最近更新</div>
-          <div class="custom-select-option" data-value="created-desc">最新创建</div>
-          <div class="custom-select-option" data-value="created-asc">最早创建</div>
-          <div class="custom-select-option" data-value="title-asc">标题 A-Z</div>
-          <div class="custom-select-option" data-value="title-desc">标题 Z-A</div>
-        </div>
-      </div>
-      <label class="fav-filter">
-        <input type="checkbox" id="favOnly" style="display:none;">
-        <span class="codicon codicon-star-empty"></span>
-        <span>仅收藏</span>
-      </label>
+    <div class="list-wrapper" id="listWrapper">
+      <ul class="chat-list" id="chatList">
+        <li class="empty-state">
+          <span class="codicon codicon-comment-discussion"></span>
+          <div class="empty-text">加载中...</div>
+        </li>
+      </ul>
     </div>
-    
-    <ul class="chat-list" id="chatList">
-      <li class="empty-state">
-        <span class="codicon codicon-comment-discussion"></span>
-        <div class="empty-text">加载中...</div>
-      </li>
-    </ul>
   `;
 }
 
@@ -435,6 +545,159 @@ export function getSharedScript(): string {
       });
     }
     initCustomSelects();
+    
+    // 自定义滚动条实现
+    (function initCustomScrollbar() {
+      const wrapper = $('listWrapper');
+      if (!wrapper) return;
+      
+      // 创建滚动条元素
+      const track = document.createElement('div');
+      track.className = 'scrollbar-track';
+      const thumb = document.createElement('div');
+      thumb.className = 'scrollbar-thumb';
+      track.appendChild(thumb);
+      wrapper.appendChild(track);
+      
+      let hideTimer;
+      let isDragging = false;
+      let startY, startScrollTop;
+      let updatePending = false;
+      
+      // 更新滚动条位置和大小（节流）
+      function updateThumb() {
+        if (updatePending) return;
+        updatePending = true;
+        requestAnimationFrame(() => {
+          updatePending = false;
+          const { scrollTop, scrollHeight, clientHeight } = chatList;
+          if (scrollHeight <= clientHeight) {
+            track.style.display = 'none';
+            return;
+          }
+          track.style.display = '';
+          const thumbHeight = Math.max(30, (clientHeight / scrollHeight) * clientHeight);
+          const maxTop = clientHeight - thumbHeight;
+          const thumbTop = scrollHeight > clientHeight 
+            ? (scrollTop / (scrollHeight - clientHeight)) * maxTop 
+            : 0;
+          thumb.style.height = thumbHeight + 'px';
+          thumb.style.top = thumbTop + 'px';
+        });
+      }
+      
+      // 显示滚动条
+      function showScrollbar() {
+        track.classList.add('visible');
+        clearTimeout(hideTimer);
+      }
+      
+      // 隐藏滚动条
+      function hideScrollbar() {
+        if (!isDragging) {
+          hideTimer = setTimeout(() => track.classList.remove('visible'), 800);
+        }
+      }
+      
+      // 滚动事件
+      chatList.addEventListener('scroll', () => {
+        updateThumb();
+        showScrollbar();
+        hideScrollbar();
+      }, { passive: true });
+      
+      // 鼠标进入/离开
+      wrapper.addEventListener('mouseenter', () => {
+        updateThumb();
+        showScrollbar();
+      });
+      wrapper.addEventListener('mouseleave', hideScrollbar);
+      
+      // 拖拽滚动条
+      thumb.addEventListener('mousedown', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        isDragging = true;
+        thumb.classList.add('dragging');
+        startY = e.clientY;
+        startScrollTop = chatList.scrollTop;
+        showScrollbar();
+      });
+      
+      document.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        const { scrollHeight, clientHeight } = chatList;
+        const thumbHeight = Math.max(30, (clientHeight / scrollHeight) * clientHeight);
+        const maxTop = clientHeight - thumbHeight;
+        const deltaY = e.clientY - startY;
+        const scrollRatio = maxTop > 0 ? deltaY / maxTop : 0;
+        chatList.scrollTop = startScrollTop + scrollRatio * (scrollHeight - clientHeight);
+      });
+      
+      document.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          thumb.classList.remove('dragging');
+          hideScrollbar();
+        }
+      });
+      
+      // 点击轨道跳转
+      track.addEventListener('click', e => {
+        if (e.target === thumb) return;
+        const rect = track.getBoundingClientRect();
+        const clickY = e.clientY - rect.top;
+        const { scrollHeight, clientHeight } = chatList;
+        const thumbHeight = Math.max(30, (clientHeight / scrollHeight) * clientHeight);
+        const maxTop = clientHeight - thumbHeight;
+        const scrollRatio = maxTop > 0 ? (clickY - thumbHeight / 2) / maxTop : 0;
+        chatList.scrollTop = Math.max(0, Math.min(scrollRatio * (scrollHeight - clientHeight), scrollHeight - clientHeight));
+      });
+      
+      // 延迟初始化
+      setTimeout(updateThumb, 100);
+      
+      // 监听窗口大小变化
+      window.addEventListener('resize', updateThumb);
+    })();
+    
+    // 顶部控制区域自动隐藏
+    let autoHideControlsEnabled = false; // 默认关闭，由设置控制
+    
+    (function initControlsAutoHide() {
+      const controlsArea = $('controlsArea');
+      const listWrapper = $('listWrapper');
+      if (!controlsArea || !listWrapper || !chatList) return;
+      
+      let lastScrollTop = 0;
+      let ticking = false;
+      const threshold = 10; // 最小滚动距离才触发
+      
+      chatList.addEventListener('scroll', () => {
+        if (!autoHideControlsEnabled) return; // 检查设置是否启用
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          const scrollTop = chatList.scrollTop;
+          const delta = scrollTop - lastScrollTop;
+          
+          // 滚动到顶部时始终显示
+          if (scrollTop <= 5) {
+            controlsArea.classList.remove('hidden');
+          } else if (Math.abs(delta) > threshold) {
+            if (delta > 0) {
+              // 向下滚动 - 隐藏
+              controlsArea.classList.add('hidden');
+            } else {
+              // 向上滚动 - 显示
+              controlsArea.classList.remove('hidden');
+            }
+            lastScrollTop = scrollTop;
+          }
+          ticking = false;
+        });
+      }, { passive: true });
+    })();
     
     function updateFavIcon() {
       const label = favOnly.parentElement;
@@ -495,6 +758,14 @@ export function getSharedScript(): string {
     
     window.addEventListener('message', e => {
       if (e.data.type === 'updateList') render(e.data.data);
+      if (e.data.type === 'settings') {
+        autoHideControlsEnabled = e.data.autoHideControls || false;
+        // 如果禁用了自动隐藏，确保控制区域显示
+        if (!autoHideControlsEnabled) {
+          const controlsArea = $('controlsArea');
+          if (controlsArea) controlsArea.classList.remove('hidden');
+        }
+      }
     });
     
     function formatTime(iso) {
@@ -561,21 +832,30 @@ export function getSharedScript(): string {
         list.forEach(it => {
           const typeIcon = getTypeIcon(it.type);
           html += '<div class="chat-item" data-path="' + esc(it.filePath) + '" data-fn="' + esc(it.fileName) + '">';
-          html += '<div class="item-title"><span class="title-icon codicon ' + typeIcon + '"></span><span class="title-text">' + esc(it.title) + '</span></div>';
+          html += '<span class="item-icon codicon ' + typeIcon + '"></span>';
+          html += '<div class="item-content">';
+          html += '<div class="item-title">' + esc(it.title) + '</div>';
           html += '<div class="item-desc">' + esc(it.description) + '</div>';
+          // 标签行（包括类型和标签）
+          if (it.type || (it.tags && it.tags.length)) {
+            html += '<div class="item-tags">';
+            if (it.type) html += '<span class="item-type ' + it.type + '">' + it.type + '</span>';
+            if (it.tags && it.tags.length) {
+              it.tags.forEach(t => { html += '<span class="item-tag">' + esc(t) + '</span>'; });
+            }
+            html += '</div>';
+          }
+          // 时间/按钮行
           html += '<div class="item-meta">';
           html += '<div class="meta-left">';
           html += '<span class="item-time">' + formatTime(it.updatedAt || it.createdAt) + '</span>';
-          if (it.type) html += '<span class="item-type ' + it.type + '">' + it.type + '</span>';
-          if (it.tags && it.tags.length) {
-            it.tags.forEach(t => { html += '<span class="item-tag">' + esc(t) + '</span>'; });
-          }
           html += '</div>';
           html += '<div class="item-actions">';
           html += '<button class="act-btn del" data-act="del" title="删除"><span class="codicon codicon-trash"></span></button>';
           html += '<button class="act-btn copy" data-act="copy" title="复制链接"><span class="codicon codicon-copy"></span></button>';
           html += '<button class="act-btn fav ' + (it.favorite ? 'active' : '') + '" data-act="fav" title="收藏"><span class="codicon ' + (it.favorite ? 'codicon-star-full' : 'codicon-star-empty') + '"></span></button>';
           html += '<button class="act-btn attach" data-act="attach" title="插入到对话"><span class="codicon codicon-indent"></span></button>';
+          html += '</div>';
           html += '</div>';
           html += '</div>';
           html += '</div>';

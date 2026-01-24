@@ -2,7 +2,7 @@
   "name": "my-last-chat",
   "displayName": "My Last Chat",
   "description": "Agent对话历史摘要管理器 - 管理和搜索您的AI聊天记录摘要",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "publisher": "my-last-chat",
   "engines": {
     "vscode": "^1.95.0"
@@ -123,6 +123,11 @@
           "type": "string",
           "default": "",
           "description": "全局存储路径（当storageLocation为global时使用）"
+        },
+        "myLastChat.autoHideControls": {
+          "type": "boolean",
+          "default": false,
+          "description": "滚动列表时自动隐藏顶部搜索和筛选控件"
         }
       }
     },
