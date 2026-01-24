@@ -118,7 +118,26 @@ export class ChatListPanel {
         await this._search(data.query, data.filter, data.showFavoritesOnly, data.sortBy, data.scope);
         break;
       case 'ready':
-        await this._refresh();
+        // 使用 webview 传递的筛选参数
+        const scope = data.scope || 'workspace';
+        const filter = data.filter || 'all';
+        const sortBy = data.sortBy || 'updated-desc';
+        const showFavoritesOnly = data.showFavoritesOnly || false;
+        
+        // 检查工作区是否有数据
+        const workspaceSummaries = await this._storageService.getAllChatSummaries('workspace');
+        const actualScope = (scope === 'workspace' && workspaceSummaries.length === 0) ? 'all' : scope;
+        
+        // 如果需要回退到全部范围，通知 webview 更新 UI
+        if (actualScope !== scope) {
+          this._panel.webview.postMessage({
+            type: 'updateScope',
+            scope: actualScope
+          });
+        }
+        
+        // 使用确定的范围进行搜索
+        await this._search('', filter, showFavoritesOnly, sortBy, actualScope);
         break;
       case 'toggleFavorite':
         await this._storageService.toggleFavorite(data.filePath);
@@ -165,24 +184,18 @@ export class ChatListPanel {
 
   /**
    * 公共刷新方法，供外部调用
+   * 通过通知 webview 触发搜索，保持当前的筛选器状态
    */
   public async refresh(): Promise<void> {
-    await this._refresh();
+    this._panel.webview.postMessage({
+      type: 'triggerSearch'
+    });
   }
 
   private async _refresh(): Promise<void> {
-    let summaries = await this._storageService.getAllChatSummaries();
-    
-    // 默认按最近更新时间降序排序
-    summaries.sort((a, b) => {
-      const aTime = a.metadata.updatedAt || a.metadata.createdAt || '';
-      const bTime = b.metadata.updatedAt || b.metadata.createdAt || '';
-      return new Date(bTime).getTime() - new Date(aTime).getTime();
-    });
-    
+    // 也通过 triggerSearch 来保持筛选状态
     this._panel.webview.postMessage({
-      type: 'updateList',
-      data: this._mapSummariesToData(summaries)
+      type: 'triggerSearch'
     });
   }
 

@@ -69,7 +69,27 @@ export class ChatListViewProvider implements vscode.WebviewViewProvider {
         await this._search(data.query, data.filter, data.showFavoritesOnly, data.sortBy, data.scope);
         break;
       case 'ready':
-        await this.refresh();
+        // 使用 webview 传递的筛选参数
+        const scope = data.scope || 'workspace';
+        const filter = data.filter || 'all';
+        const sortBy = data.sortBy || 'updated-desc';
+        const showFavoritesOnly = data.showFavoritesOnly || false;
+        
+        // 检查工作区是否有数据
+        const workspaceSummaries = await this._storageService.getAllChatSummaries('workspace');
+        const actualScope = (scope === 'workspace' && workspaceSummaries.length === 0) ? 'all' : scope;
+        
+        // 如果需要回退到全部范围，通知 webview 更新 UI
+        if (actualScope !== scope) {
+          this._view?.webview.postMessage({
+            type: 'updateScope',
+            scope: actualScope
+          });
+        }
+        
+        // 使用确定的范围进行搜索
+        await this._search('', filter, showFavoritesOnly, sortBy, actualScope);
+        
         // 发送设置给 webview
         this._sendSettings();
         break;
@@ -100,21 +120,13 @@ export class ChatListViewProvider implements vscode.WebviewViewProvider {
 
   /**
    * 刷新聊天列表
+   * 通过通知 webview 触发搜索，保持当前的筛选器状态
    */
   public async refresh(): Promise<void> {
     if (this._view) {
-      let summaries = await this._storageService.getAllChatSummaries();
-      
-      // 默认按最近更新时间降序排序
-      summaries.sort((a, b) => {
-        const aTime = a.metadata.updatedAt || a.metadata.createdAt || '';
-        const bTime = b.metadata.updatedAt || b.metadata.createdAt || '';
-        return new Date(bTime).getTime() - new Date(aTime).getTime();
-      });
-      
+      // 通知 webview 使用当前筛选状态重新搜索
       this._view.webview.postMessage({
-        type: 'updateList',
-        data: this._mapSummariesToData(summaries)
+        type: 'triggerSearch'
       });
     }
   }

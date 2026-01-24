@@ -3,7 +3,12 @@
   "displayName": "My Last Chat",
   "description": "Agent对话历史摘要管理器 - 管理和搜索您的AI聊天记录摘要",
   "version": "0.0.5",
+  "icon": "res/my-last-chat.png",
   "publisher": "my-last-chat",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isWittHere/my-last-chat.git"
+  },
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -26,7 +31,7 @@
         {
           "id": "my-last-chat",
           "title": "My Last Chat",
-          "icon": "$(comment-discussion)"
+          "icon": "res/my-last-chat.svg"
         }
       ]
     },
