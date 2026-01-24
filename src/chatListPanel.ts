@@ -37,6 +37,12 @@ export class ChatListPanel {
       }
     );
 
+    // 设置面板图标（支持浅色/深色主题）
+    panel.iconPath = {
+      light: vscode.Uri.joinPath(extensionUri, 'res', 'my-last-chat-light.svg'),
+      dark: vscode.Uri.joinPath(extensionUri, 'res', 'my-last-chat-dark.svg')
+    };
+
     ChatListPanel.currentPanel = new ChatListPanel(panel, extensionUri, storageService);
   }
 
