@@ -4,7 +4,7 @@ English | [简体中文](README.zh-CN.md)
 
 My Last Chat is a VS Code extension for managing and searching your AI chat history summaries. It integrates deeply with GitHub Copilot, making it easy to save, search, and reuse your AI conversation records.
 
-![My Last Chat Preview](sample_image.png)
+![My Last Chat Preview](https://raw.githubusercontent.com/isWittHere/my-last-chat/main/sample_image.png)
 
 When you install the My Last Chat extension, you get:
 
