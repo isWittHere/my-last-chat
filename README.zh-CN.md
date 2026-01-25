@@ -22,7 +22,7 @@ My Last Chat 是一个 VS Code 扩展，用于管理和搜索您的 AI 聊天历
 
 ### 使用 Copilot 自动生成摘要
 
-本插件提供了 `compact.prompt.md` 文件，它是一个可重用的 prompt 文件。在 Copilot Chat 的 Prompt 配置中添加它，就可以在 Copilot Chat 中使用 `/compact` 命令：
+本插件提供了 [`compact.prompt.md`](https://raw.githubusercontent.com/isWittHere/my-last-chat/main/compact.prompt.md) 文件，它是一个可重用的 prompt 文件。在 Copilot Chat 的 Prompt 配置中添加它，就可以在 Copilot Chat 中使用 `/compact` 命令：
 
 ```
 @workspace /compact
