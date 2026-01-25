@@ -1,148 +1,148 @@
 # My Last Chat
 
-[English](README_EN.md) | 简体中文
+English | [简体中文](README.zh-CN.md)
 
-My Last Chat 是一个 VS Code 扩展，用于管理和搜索您的 AI 聊天历史摘要。它与 GitHub Copilot 深度集成，让您可以轻松保存、搜索和重用您的 AI 对话记录。
+My Last Chat is a VS Code extension for managing and searching your AI chat history summaries. It integrates deeply with GitHub Copilot, making it easy to save, search, and reuse your AI conversation records.
 
 ![My Last Chat Preview](sample_image.png)
 
-当您安装 My Last Chat 扩展时，您将获得：
+When you install the My Last Chat extension, you get:
 
-- **My Last Chat 视图** - 在侧边栏中查看和管理所有聊天摘要
-- **Copilot 工具集成** - 提供三个原生 LM 工具供 GitHub Copilot 调用
-- **自动摘要生成** - 使用 `/compact` 命令自动总结对话内容
+- **My Last Chat View** - View and manage all chat summaries in the sidebar
+- **Copilot Tool Integration** - Three native LM tools for GitHub Copilot
+- **Auto Summary Generation** - Use `/compact` command to automatically summarize conversations
 
-## 快速开始
+## Getting Started
 
-### 创建您的第一个摘要
+### Create Your First Summary
 
-1. 在 Activity Bar 中点击 My Last Chat 图标
-2. 点击 `+` 按钮创建新摘要
-3. 填写摘要信息并保存
+1. Click the My Last Chat icon in the Activity Bar
+2. Click the `+` button to create a new summary
+3. Fill in the summary information and save
 
-### 使用 Copilot 自动生成摘要
+### Auto-Generate Summaries with Copilot
 
-本插件提供了 `compact.prompt.md` 文件，它是一个可重用的 prompt 文件。在 Copilot Chat 的 Prompt 配置中添加它，就可以在 Copilot Chat 中使用 `/compact` 命令：
+This extension provides a `compact.prompt.md` file, which is a reusable prompt file. Add it to Copilot Chat's Prompt configuration, and you can use the `/compact` command in Copilot Chat:
 
 ```
 @workspace /compact
 ```
 
-该命令将自动：
-- 提取当前对话的技术细节和代码模式
-- 生成符合规范的 YAML frontmatter 元数据
-- 智能查重，更新已有摘要或创建新文件
-- 自动保存到 `.myLastChat/` 目录
+This command will automatically:
+- Extract technical details and code patterns from the current conversation
+- Generate YAML frontmatter with proper metadata format
+- Smart deduplication: update existing summaries or create new files
+- Auto-save to `.myLastChat/` directory
 
-## 主要功能
+## Key Features
 
-### 📝 摘要管理
+### 📝 Summary Management
 
-所有聊天摘要以 Markdown 格式存储在 `.myLastChat` 文件夹中，每个文件包含：
+All chat summaries are stored as Markdown files in the `.myLastChat` folder, each containing:
 
-- YAML frontmatter 元数据（标题、描述、项目信息等）
-- Markdown 格式的聊天内容
-- 标签和任务完成列表
+- YAML frontmatter metadata (title, description, project info, etc.)
+- Markdown-formatted chat content
+- Tags and completed task lists
 
-### 💡 灵活的知识管理
+### 💡 Flexible Knowledge Management
 
-`/compact` 不仅可用于总结对话，还可以用于灵活的项目知识管理。你可以：
-- 在对话后使用 `/compact` 更新现有知识或创建新知识
-- 随时将相关摘要插入当前对话，以提供项目知识或进展
-- 构建一个可搜索、可复用的项目知识库
+`/compact` is not just for summarizing conversations, but also for flexible project knowledge management. You can:
+- Use `/compact` after conversations to update existing knowledge or create new knowledge
+- Insert relevant summaries into current conversations anytime to provide project knowledge or progress
+- Build a searchable, reusable project knowledge base
 
-### 🔍 搜索和筛选
+### 🔍 Search and Filtering
 
-- **按标题搜索** - 快速找到相关摘要
-- **元数据筛选** - 按项目、类型、范围筛选
-- **收藏功能** - 标记重要的摘要
-- **时间分组** - 按今天、昨天、上周、更早分组显示
+- **Search by title** - Quickly find relevant summaries
+- **Metadata filtering** - Filter by project, type, scope
+- **Favorites** - Mark important summaries
+- **Time grouping** - Group by Today, Yesterday, Last Week, Earlier
 
-### 🎨 灵活的视图选项
+### 🎨 Flexible View Options
 
-- **侧边栏视图** - 在侧边栏中快速浏览摘要
-- **编辑器面板** - 在编辑器中打开完整的摘要列表
+- **Sidebar View** - Quick browse summaries in the sidebar
+- **Editor Panel** - Open the full summary list in the editor
 
-### 🤖 Copilot 工具集成
+### 🤖 Copilot Tool Integration
 
-为 GitHub Copilot 提供三个拓展工具：
+Provides three extension tools for GitHub Copilot:
 
-| 工具 | 引用名称 | 功能 |
-|------|---------|------|
-| `myLastChat_getLastChatsList` | `@lastchats` | 获取所有聊天摘要列表 |
-| `myLastChat_searchByTitle` | - | 按标题关键词搜索摘要 |
-| `myLastChat_searchByMeta` | - | 按元数据字段搜索摘要 |
+| Tool | Reference Name | Function |
+|------|---------------|----------|
+| `myLastChat_getLastChatsList` | `@lastchats` | Get all chat summary lists |
+| `myLastChat_searchByTitle` | - | Search summaries by title keywords |
+| `myLastChat_searchByMeta` | - | Search summaries by metadata fields |
 
-**反馈级别**: 
-- `TITLE_ONLY` - 仅返回标题
-- `DESCRIPTION` - 返回标题和描述
-- `META` - 返回所有元数据
-- `ALL` - 返回完整内容
+**Feedback Levels**: 
+- `TITLE_ONLY` - Returns title only
+- `DESCRIPTION` - Returns title and description
+- `META` - Returns all metadata
+- `ALL` - Returns full content
 
-示例：
+Example:
 ```
-@workspace 使用 @lastchats 查找所有关于调试的摘要
+@workspace Find all debugging summaries using @lastchats
 ```
 
-### 🚀 快速插入到聊天
+### 🚀 Quick Insert to Chat
 
-一键将摘要文件添加到 Copilot 对话中，让 AI 助手了解之前的对话上下文。
+One-click to add summary files to Copilot conversations, helping the AI assistant understand previous conversation context.
 
-## 摘要文件格式
+## Summary File Format
 
 ```markdown
 ---
-title: 聊天标题（必填）
-description: 聊天描述（必填）
-workplace: /path/to/workspace（必填）
-project: 项目名称
+title: Chat title (required)
+description: Chat description (required)
+workplace: /path/to/workspace (required)
+project: Project name
 type: coding | debug | planning | spec
 createdAt: 2026-01-25T10:00:00.000Z
 updatedAt: 2026-01-25T10:00:00.000Z
 favorite: false
 tags: [tag1, tag2]
 solved_lists:
-  - 完成的任务1
-  - 完成的任务2
+  - Completed task 1
+  - Completed task 2
 ---
 
-# 聊天摘要标题
+# Chat Summary Title
 
-在此处记录聊天内容...
+Record chat content here...
 ```
 
-## 配套 Prompt 文件
+## Companion Prompt File
 
-### 📄 `compact.prompt.md` - 对话摘要生成器
+### 📄 `compact.prompt.md` - Conversation Summary Generator
 
-这是一个配套的 prompt 文件，可以在 Copilot Chat 中使用：
+This is a companion prompt file that can be used in Copilot Chat:
 
 ```
 @workspace /compact
 ```
 
-功能：
-- ✅ 自动提取技术细节和代码模式
-- ✅ 生成符合元数据格式的 YAML frontmatter
-- ✅ 智能查重，更新已有摘要或创建新文件
-- ✅ 自动保存到 `.myLastChat/` 目录
+Features:
+- ✅ Auto-extract technical details and code patterns
+- ✅ Generate YAML frontmatter with proper metadata format
+- ✅ Smart deduplication: update existing summaries or create new files
+- ✅ Auto-save to `.myLastChat/` directory
 
-## 设置选项
+## Configuration Options
 
-打开 VS Code 设置 (Ctrl+,) 并搜索 "My Last Chat"：
+Open VS Code Settings (Ctrl+,) and search for "My Last Chat":
 
-- **存储位置** - 选择工作区或全局存储
-- **全局存储路径** - 自定义全局存储目录
-- **自动隐藏控件** - 滚动时自动隐藏搜索栏
+- **Storage Location** - Choose workspace or global storage
+- **Global Storage Path** - Customize global storage directory
+- **Auto Hide Controls** - Automatically hide search bar when scrolling
 
-## 隐私和数据
+## Privacy and Data
 
-所有聊天摘要都存储在本地文件系统中，扩展不会将您的摘要内容发送到任何远程服务器。
+All chat summaries are stored in the local file system. The extension does not send your summary content to any remote servers.
 
-## 反馈和问题
+## Feedback and Issues
 
-如果您遇到任何问题或有功能建议，请在 [GitHub Issues](https://github.com/isWittHere/my-last-chat/issues) 中提交。
+If you encounter any problems or have feature suggestions, please submit them in [GitHub Issues](https://github.com/isWittHere/my-last-chat/issues).
 
-## 许可证
+## License
 
-MIT License - 详见 [LICENSE](LICENSE) 文件
+MIT License - See [LICENSE](LICENSE) file for details
