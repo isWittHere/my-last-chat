@@ -1,8 +1,9 @@
 {
   "name": "my-last-chat",
   "displayName": "My Last Chat",
-  "description": "Agent对话历史摘要管理器 - 管理和搜索您的AI聊天记录摘要",
-  "version": "0.0.5",
+  "description": "%extension.description%",
+  "version": "0.0.6",
+  "l10n": "./l10n",
   "icon": "res/my-last-chat.png",
   "publisher": "my-last-chat",
   "repository": {
@@ -40,7 +41,7 @@
         {
           "type": "webview",
           "id": "myLastChat.chatListView",
-          "name": "聊天摘要",
+          "name": "%view.chatList.name%",
           "icon": "res/my-last-chat.svg"
         }
       ]
@@ -48,36 +49,39 @@
     "commands": [
       {
         "command": "myLastChat.refresh",
-        "title": "刷新聊天列表",
+        "title": "%command.refresh.title%",
         "icon": "$(refresh)",
         "category": "My Last Chat"
       },
       {
         "command": "myLastChat.createNew",
-        "title": "新建聊天摘要",
+        "title": "%command.createNew.title%",
         "icon": "$(add)",
         "category": "My Last Chat"
       },
       {
         "command": "myLastChat.openSettings",
-        "title": "打开设置",
+        "title": "%command.openSettings.title%",
         "icon": "$(gear)",
         "category": "My Last Chat"
       },
       {
         "command": "myLastChat.openFile",
-        "title": "打开聊天摘要文件",
+        "title": "%command.openFile.title%",
         "category": "My Last Chat"
       },
       {
         "command": "myLastChat.openInEditor",
-        "title": "My Last Chat",
-        "icon": "res/my-last-chat.svg",
+        "title": "%command.openInEditor.title%",
+        "icon": {
+          "light": "res/my-last-chat-light.svg",
+          "dark": "res/my-last-chat-dark.svg"
+        },
         "category": "My Last Chat"
       },
       {
         "command": "myLastChat.createNewFromPanel",
-        "title": "新建聊天摘要",
+        "title": "%command.createNewFromPanel.title%",
         "icon": "$(add)",
         "category": "My Last Chat"
       }
@@ -119,7 +123,7 @@
       ]
     },
     "configuration": {
-      "title": "My Last Chat",
+      "title": "%config.title%",
       "properties": {
         "myLastChat.storageLocation": {
           "type": "string",
@@ -128,17 +132,17 @@
             "global"
           ],
           "default": "workspace",
-          "description": "聊天摘要的存储位置：workspace(工作区内) 或 global(全局存储)"
+          "description": "%config.storageLocation.description%"
         },
         "myLastChat.globalStoragePath": {
           "type": "string",
           "default": "",
-          "description": "全局存储路径（当storageLocation为global时使用）"
+          "description": "%config.globalStoragePath.description%"
         },
         "myLastChat.autoHideControls": {
           "type": "boolean",
           "default": false,
-          "description": "滚动列表时自动隐藏顶部搜索和筛选控件"
+          "description": "%config.autoHideControls.description%"
         }
       }
     },
@@ -147,7 +151,7 @@
         "name": "myLastChat_getLastChatsList",
         "displayName": "Get Last Chats List",
         "toolReferenceName": "lastchats",
-        "description": "获取所有聊天摘要的列表，返回标题、描述和元数据信息",
+        "description": "%tool.getLastChatsList.description%",
         "modelDescription": "Get a list of all chat summaries stored in the My Last Chat extension. Returns titles, descriptions, and metadata of saved chat history summaries. Use scope parameter to specify workspace, global, or all.",
         "canBeReferencedInPrompt": true,
         "icon": "$(comment-discussion)",
@@ -163,7 +167,7 @@
                 "ALL"
               ],
               "default": "DESCRIPTION",
-              "description": "返回信息的详细程度：TITLE_ONLY(仅标题), DESCRIPTION(标题+描述), META(所有元数据), ALL(全文)"
+              "description": "%tool.getLastChatsList.feedbackLevel.description%"
             },
             "scope": {
               "type": "string",
@@ -173,7 +177,7 @@
                 "all"
               ],
               "default": "all",
-              "description": "搜索范围：workspace(仅工作区), global(仅全局), all(全部)"
+              "description": "%tool.getLastChatsList.scope.description%"
             }
           }
         },
@@ -187,7 +191,7 @@
         "name": "myLastChat_searchByTitle",
         "displayName": "Search Chats by Title",
         "toolReferenceName": "searchchat",
-        "description": "通过关键词匹配标题搜索聊天摘要",
+        "description": "%tool.searchByTitle.description%",
         "modelDescription": "Search chat summaries by matching keywords in the title. Supports multiple keywords to expand search scope. Use scope parameter to filter by workspace, global, or all.",
         "canBeReferencedInPrompt": true,
         "icon": "$(search)",
@@ -199,7 +203,7 @@
               "items": {
                 "type": "string"
               },
-              "description": "搜索关键词列表，多个关键词会扩大搜索范围"
+              "description": "%tool.searchByTitle.keywords.description%"
             },
             "feedbackLevel": {
               "type": "string",
@@ -237,7 +241,7 @@
         "name": "myLastChat_searchByMeta",
         "displayName": "Search Chats by Metadata",
         "toolReferenceName": "searchmeta",
-        "description": "通过匹配元数据关键词搜索聊天摘要",
+        "description": "%tool.searchByMeta.description%",
         "modelDescription": "Search chat summaries by matching keywords across all metadata fields including title, description, workplace, project, type, and solved_lists. Use scope parameter to filter by workspace, global, or all.",
         "canBeReferencedInPrompt": true,
         "icon": "$(file-code)",
@@ -249,7 +253,7 @@
               "items": {
                 "type": "string"
               },
-              "description": "搜索关键词列表，会在所有元数据字段中匹配"
+              "description": "%tool.searchByMeta.keywords.description%"
             },
             "feedbackLevel": {
               "type": "string",

@@ -30,8 +30,7 @@ export class ChatListViewProvider implements vscode.WebviewViewProvider {
     };
 
     webviewView.webview.html = generateWebviewHtml(webviewView.webview, this._extensionUri, {
-      isPanel: false,
-      placeholder: '搜索...'
+      isPanel: false
     });
 
     // 处理来自 WebView 的消息

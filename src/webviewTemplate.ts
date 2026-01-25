@@ -18,6 +18,70 @@ export interface WebviewDataItem {
 }
 
 /**
+ * Webview 本地化字符串接口
+ */
+export interface WebviewI18n {
+  search: string;
+  allTypes: string;
+  allScopes: string;
+  workspaceOnly: string;
+  globalOnly: string;
+  favoritesOnly: string;
+  recentlyUpdated: string;
+  newestCreated: string;
+  oldestCreated: string;
+  titleAZ: string;
+  titleZA: string;
+  loading: string;
+  noSummaries: string;
+  today: string;
+  yesterday: string;
+  lastWeek: string;
+  earlier: string;
+  justNow: string;
+  minutesAgo: string;
+  hoursAgo: string;
+  daysAgo: string;
+  delete: string;
+  copyLink: string;
+  favorite: string;
+  insertToChat: string;
+}
+
+/**
+ * 获取默认的本地化字符串
+ */
+export function getDefaultI18n(): WebviewI18n {
+  return {
+    search: vscode.l10n.t('Search...'),
+    allTypes: vscode.l10n.t('All Types'),
+    allScopes: vscode.l10n.t('All Scopes'),
+    workspaceOnly: vscode.l10n.t('Workspace'),
+    globalOnly: vscode.l10n.t('Global'),
+    favoritesOnly: vscode.l10n.t('Favorites'),
+    recentlyUpdated: vscode.l10n.t('Recently Updated'),
+    newestCreated: vscode.l10n.t('Newest Created'),
+    oldestCreated: vscode.l10n.t('Oldest Created'),
+    titleAZ: vscode.l10n.t('Title A-Z'),
+    titleZA: vscode.l10n.t('Title Z-A'),
+    loading: vscode.l10n.t('Loading...'),
+    noSummaries: vscode.l10n.t('No chat summaries'),
+    today: vscode.l10n.t('Today'),
+    yesterday: vscode.l10n.t('Yesterday'),
+    lastWeek: vscode.l10n.t('Last Week'),
+    earlier: vscode.l10n.t('Earlier'),
+    justNow: vscode.l10n.t('Just now'),
+    minutesAgo: vscode.l10n.t('{0} min ago'),
+    hoursAgo: vscode.l10n.t('{0} hr ago'),
+    daysAgo: vscode.l10n.t('{0} days ago'),
+    delete: vscode.l10n.t('Delete'),
+    copyLink: vscode.l10n.t('Copy link'),
+    favorite: vscode.l10n.t('Favorite'),
+    insertToChat: vscode.l10n.t('Insert to chat'),
+  };
+}
+
+/**
  * 获取 codicons 的 URI
  */
 export function getCodiconsUri(webview: vscode.Webview, extensionUri: vscode.Uri): vscode.Uri {
@@ -452,21 +516,21 @@ export function getSharedStyles(isPanel: boolean = false): string {
 /**
  * 获取控件 HTML
  */
-export function getControlsHtml(placeholder: string = '搜索...'): string {
+export function getControlsHtml(i18n: WebviewI18n): string {
   return `
     <div class="controls-area" id="controlsArea">
       <div class="search-box">
-        <input type="text" class="search-input" id="searchInput" placeholder="${placeholder}">
+        <input type="text" class="search-input" id="searchInput" placeholder="${i18n.search}">
       </div>
       
       <div class="controls-row">
         <div class="custom-select" id="filterSelect" data-value="all">
           <button class="custom-select-btn">
-            <span class="select-text">全部类型</span>
+            <span class="select-text">${i18n.allTypes}</span>
             <span class="codicon codicon-chevron-down"></span>
           </button>
           <div class="custom-select-dropdown">
-            <div class="custom-select-option selected" data-value="all">全部类型</div>
+            <div class="custom-select-option selected" data-value="all">${i18n.allTypes}</div>
             <div class="custom-select-option" data-value="coding">Coding</div>
             <div class="custom-select-option" data-value="debug">Debug</div>
             <div class="custom-select-option" data-value="planning">Planning</div>
@@ -475,32 +539,32 @@ export function getControlsHtml(placeholder: string = '搜索...'): string {
         </div>
         <div class="custom-select" id="scopeSelect" data-value="workspace">
           <button class="custom-select-btn">
-            <span class="select-text">仅工作区</span>
+            <span class="select-text">${i18n.workspaceOnly}</span>
             <span class="codicon codicon-chevron-down"></span>
           </button>
           <div class="custom-select-dropdown">
-            <div class="custom-select-option" data-value="all">全部范围</div>
-            <div class="custom-select-option selected" data-value="workspace">仅工作区</div>
-            <div class="custom-select-option" data-value="global">仅全局</div>
+            <div class="custom-select-option" data-value="all">${i18n.allScopes}</div>
+            <div class="custom-select-option selected" data-value="workspace">${i18n.workspaceOnly}</div>
+            <div class="custom-select-option" data-value="global">${i18n.globalOnly}</div>
           </div>
         </div>
         <div class="custom-select" id="sortSelect" data-value="updated-desc">
           <button class="custom-select-btn">
-            <span class="select-text">最近更新</span>
+            <span class="select-text">${i18n.recentlyUpdated}</span>
             <span class="codicon codicon-chevron-down"></span>
           </button>
           <div class="custom-select-dropdown">
-            <div class="custom-select-option selected" data-value="updated-desc">最近更新</div>
-            <div class="custom-select-option" data-value="created-desc">最新创建</div>
-            <div class="custom-select-option" data-value="created-asc">最早创建</div>
-            <div class="custom-select-option" data-value="title-asc">标题 A-Z</div>
-            <div class="custom-select-option" data-value="title-desc">标题 Z-A</div>
+            <div class="custom-select-option selected" data-value="updated-desc">${i18n.recentlyUpdated}</div>
+            <div class="custom-select-option" data-value="created-desc">${i18n.newestCreated}</div>
+            <div class="custom-select-option" data-value="created-asc">${i18n.oldestCreated}</div>
+            <div class="custom-select-option" data-value="title-asc">${i18n.titleAZ}</div>
+            <div class="custom-select-option" data-value="title-desc">${i18n.titleZA}</div>
           </div>
         </div>
         <label class="fav-filter">
           <input type="checkbox" id="favOnly" style="display:none;">
           <span class="codicon codicon-star-empty"></span>
-          <span>仅收藏</span>
+          <span>${i18n.favoritesOnly}</span>
         </label>
       </div>
     </div>
@@ -509,7 +573,7 @@ export function getControlsHtml(placeholder: string = '搜索...'): string {
       <ul class="chat-list" id="chatList">
         <li class="empty-state">
           <span class="codicon codicon-comment-discussion"></span>
-          <div class="empty-text">加载中...</div>
+          <div class="empty-text">${i18n.loading}</div>
         </li>
       </ul>
     </div>
@@ -519,10 +583,14 @@ export function getControlsHtml(placeholder: string = '搜索...'): string {
 /**
  * 获取共享的 JavaScript 代码
  */
-export function getSharedScript(): string {
+export function getSharedScript(i18n: WebviewI18n): string {
+  // 将 i18n 对象转换为 JSON 字符串嵌入到脚本中
+  const i18nJson = JSON.stringify(i18n);
+  
   return `
     const vscode = acquireVsCodeApi();
     const $ = id => document.getElementById(id);
+    const i18n = ${i18nJson};
     
     const searchInput = $('searchInput');
     const filterSelect = $('filterSelect');
@@ -877,24 +945,24 @@ export function getSharedScript(): string {
       const mins = Math.floor(diff / 60000);
       const hrs = Math.floor(diff / 3600000);
       const days = Math.floor(diff / 86400000);
-      if (mins < 1) return '刚刚';
-      if (mins < 60) return mins + '分钟前';
-      if (hrs < 24) return hrs + '小时前';
-      if (days < 7) return days + '天前';
-      return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+      if (mins < 1) return i18n.justNow;
+      if (mins < 60) return i18n.minutesAgo.replace('{0}', mins);
+      if (hrs < 24) return i18n.hoursAgo.replace('{0}', hrs);
+      if (days < 7) return i18n.daysAgo.replace('{0}', days);
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     }
     
     function getGroup(iso) {
-      if (!iso) return '更早些';
+      if (!iso) return i18n.earlier;
       const d = new Date(iso);
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const itemDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
       const diff = Math.floor((today - itemDay) / 86400000);
-      if (diff === 0) return '今天';
-      if (diff === 1) return '昨天';
-      if (diff < 7) return '近一周';
-      return '更早些';
+      if (diff === 0) return i18n.today;
+      if (diff === 1) return i18n.yesterday;
+      if (diff < 7) return i18n.lastWeek;
+      return i18n.earlier;
     }
     
     function esc(t) {
@@ -908,11 +976,15 @@ export function getSharedScript(): string {
       currentItems = items || [];
       
       if (!items || !items.length) {
-        chatList.innerHTML = '<li class="empty-state"><span class="codicon codicon-inbox"></span><div class="empty-text">没有找到聊天摘要</div></li>';
+        chatList.innerHTML = '<li class="empty-state"><span class="codicon codicon-inbox"></span><div class="empty-text">' + i18n.noSummaries + '</div></li>';
         return;
       }
       
-      const groups = { '今天': [], '昨天': [], '近一周': [], '更早些': [] };
+      const groups = {};
+      groups[i18n.today] = [];
+      groups[i18n.yesterday] = [];
+      groups[i18n.lastWeek] = [];
+      groups[i18n.earlier] = [];
       items.forEach(it => {
         const g = getGroup(it.updatedAt || it.createdAt);
         groups[g].push(it);
@@ -952,10 +1024,10 @@ export function getSharedScript(): string {
           html += '<span class="item-time">' + formatTime(it.updatedAt || it.createdAt) + '</span>';
           html += '</div>';
           html += '<div class="item-actions">';
-          html += '<button class="act-btn del" data-act="del" title="删除"><span class="codicon codicon-trash"></span></button>';
-          html += '<button class="act-btn copy" data-act="copy" title="复制链接"><span class="codicon codicon-copy"></span></button>';
-          html += '<button class="act-btn fav ' + (it.favorite ? 'active' : '') + '" data-act="fav" title="收藏"><span class="codicon ' + (it.favorite ? 'codicon-star-full' : 'codicon-star-empty') + '"></span></button>';
-          html += '<button class="act-btn attach" data-act="attach" title="插入到对话"><span class="codicon codicon-indent"></span></button>';
+          html += '<button class="act-btn del" data-act="del" title="' + i18n.delete + '"><span class="codicon codicon-trash"></span></button>';
+          html += '<button class="act-btn copy" data-act="copy" title="' + i18n.copyLink + '"><span class="codicon codicon-copy"></span></button>';
+          html += '<button class="act-btn fav ' + (it.favorite ? 'active' : '') + '" data-act="fav" title="' + i18n.favorite + '"><span class="codicon ' + (it.favorite ? 'codicon-star-full' : 'codicon-star-empty') + '"></span></button>';
+          html += '<button class="act-btn attach" data-act="attach" title="' + i18n.insertToChat + '"><span class="codicon codicon-indent"></span></button>';
           html += '</div>';
           html += '</div>';
           html += '</div>';
@@ -1033,15 +1105,15 @@ export function generateWebviewHtml(
   extensionUri: vscode.Uri,
   options: {
     isPanel?: boolean;
-    placeholder?: string;
+    i18n?: WebviewI18n;
   } = {}
 ): string {
-  const { isPanel = false, placeholder = '搜索...' } = options;
+  const { isPanel = false, i18n = getDefaultI18n() } = options;
   const nonce = getNonce();
   const codiconsUri = getCodiconsUri(webview, extensionUri);
 
   return `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="${vscode.env.language}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1052,9 +1124,9 @@ export function generateWebviewHtml(
 </head>
 <body>
   <div class="container">
-    ${getControlsHtml(placeholder)}
+    ${getControlsHtml(i18n)}
   </div>
-  <script nonce="${nonce}">${getSharedScript()}</script>
+  <script nonce="${nonce}">${getSharedScript(i18n)}</script>
 </body>
 </html>`;
 }

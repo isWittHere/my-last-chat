@@ -285,8 +285,8 @@ export class ChatStorageService {
 
     const now = new Date().toISOString();
     const template = `---
-title: 新聊天摘要
-description: 请填写聊天描述
+title: ${vscode.l10n.t('New Chat Summary')}
+description: ${vscode.l10n.t('Please enter chat description')}
 workplace: ${defaultWorkplace}
 project: 
 type: 
@@ -298,9 +298,9 @@ solved_lists:
   - 
 ---
 
-# 聊天摘要
+# ${vscode.l10n.t('Chat Summary')}
 
-在此处记录聊天内容...
+${vscode.l10n.t('Record chat content here...')}
 `;
 
     try {

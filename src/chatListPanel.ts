@@ -183,8 +183,7 @@ export class ChatListPanel {
 
   private _update() {
     this._panel.webview.html = generateWebviewHtml(this._panel.webview, this._extensionUri, {
-      isPanel: true,
-      placeholder: '搜索聊天摘要...'
+      isPanel: true
     });
   }
 
