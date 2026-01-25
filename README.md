@@ -22,7 +22,7 @@ When you install the My Last Chat extension, you get:
 
 ### Auto-Generate Summaries with Copilot
 
-This extension provides a `compact.prompt.md` file, which is a reusable prompt file. Add it to Copilot Chat's Prompt configuration, and you can use the `/compact` command in Copilot Chat:
+This extension provides a [`compact.prompt.md`](https://raw.githubusercontent.com/isWittHere/my-last-chat/main/compact.prompt.md) file, which is a reusable prompt file. Add it to Copilot Chat's Prompt configuration, and you can use the `/compact` command in Copilot Chat:
 
 ```
 @workspace /compact
