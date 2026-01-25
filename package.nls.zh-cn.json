@@ -1,0 +1,22 @@
+{
+  "extension.description": "Agent对话历史摘要管理器 - 管理和搜索您的AI聊天记录摘要",
+  "viewsContainer.title": "My Last Chat",
+  "view.chatList.name": "聊天摘要",
+  "command.refresh.title": "刷新聊天列表",
+  "command.createNew.title": "新建聊天摘要",
+  "command.openSettings.title": "打开设置",
+  "command.openFile.title": "打开聊天摘要文件",
+  "command.openInEditor.title": "My Last Chat (编辑器视图)",
+  "command.createNewFromPanel.title": "新建聊天摘要",
+  "config.title": "My Last Chat",
+  "config.storageLocation.description": "聊天摘要的存储位置：workspace(工作区内) 或 global(全局存储)",
+  "config.globalStoragePath.description": "全局存储路径（当storageLocation为global时使用）",
+  "config.autoHideControls.description": "滚动列表时自动隐藏顶部搜索和筛选控件",
+  "tool.getLastChatsList.description": "获取所有聊天摘要的列表，返回标题、描述和元数据信息",
+  "tool.getLastChatsList.feedbackLevel.description": "返回信息的详细程度：TITLE_ONLY(仅标题), DESCRIPTION(标题+描述), META(所有元数据), ALL(全文)",
+  "tool.getLastChatsList.scope.description": "搜索范围：workspace(仅工作区), global(仅全局), all(全部)",
+  "tool.searchByTitle.description": "通过关键词匹配标题搜索聊天摘要",
+  "tool.searchByTitle.keywords.description": "搜索关键词列表，多个关键词会扩大搜索范围",
+  "tool.searchByMeta.description": "通过匹配元数据关键词搜索聊天摘要",
+  "tool.searchByMeta.keywords.description": "搜索关键词列表，会在所有元数据字段中匹配"
+}

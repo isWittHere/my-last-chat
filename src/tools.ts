@@ -25,7 +25,7 @@ export class GetLastChatsListTool implements vscode.LanguageModelTool<GetLastCha
       
       if (results.length === 0) {
         return new vscode.LanguageModelToolResult([
-          new vscode.LanguageModelTextPart('没有找到任何聊天摘要。')
+          new vscode.LanguageModelTextPart(vscode.l10n.t('No chat summaries found.'))
         ]);
       }
 
@@ -35,35 +35,35 @@ export class GetLastChatsListTool implements vscode.LanguageModelTool<GetLastCha
       ]);
     } catch (error) {
       return new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart(`获取聊天列表失败: ${error}`)
+        new vscode.LanguageModelTextPart(vscode.l10n.t('Failed to get chat list: {0}', String(error)))
       ]);
     }
   }
 
   private formatResults(results: any[], level: FeedbackLevel): string {
-    let output = `找到 ${results.length} 个聊天摘要:\n\n`;
+    let output = vscode.l10n.t('Found {0} chat summaries:', results.length) + '\n\n';
     
     for (const result of results) {
       output += `## ${result.title}\n`;
-      output += `文件: ${result.fileName}\n`;
+      output += vscode.l10n.t('File: {0}', result.fileName) + '\n';
       if (result.scope) {
-        output += `范围: ${result.scope === 'workspace' ? '工作区' : '全局'}\n`;
+        output += (result.scope === 'workspace' ? vscode.l10n.t('Scope: workspace') : vscode.l10n.t('Scope: global')) + '\n';
       }
       
       if (level !== 'TITLE_ONLY' && result.description) {
-        output += `描述: ${result.description}\n`;
+        output += vscode.l10n.t('Description: {0}', result.description) + '\n';
       }
       
       if ((level === 'META' || level === 'ALL') && result.metadata) {
-        output += `工作区: ${result.metadata.workplace}\n`;
+        output += vscode.l10n.t('Workspace: {0}', result.metadata.workplace) + '\n';
         if (result.metadata.project) {
-          output += `项目: ${result.metadata.project}\n`;
+          output += vscode.l10n.t('Project: {0}', result.metadata.project) + '\n';
         }
         if (result.metadata.type) {
-          output += `类型: ${result.metadata.type}\n`;
+          output += vscode.l10n.t('Type: {0}', result.metadata.type) + '\n';
         }
         if (result.metadata.solved_lists && result.metadata.solved_lists.length > 0) {
-          output += `完成任务:\n`;
+          output += vscode.l10n.t('Completed tasks:') + '\n';
           for (const task of result.metadata.solved_lists) {
             if (task) {
               output += `  - ${task}\n`;
@@ -73,7 +73,7 @@ export class GetLastChatsListTool implements vscode.LanguageModelTool<GetLastCha
       }
       
       if (level === 'ALL' && result.content) {
-        output += `\n内容:\n${result.content}\n`;
+        output += '\n' + vscode.l10n.t('Content:') + '\n' + result.content + '\n';
       }
       
       output += '\n---\n\n';
@@ -96,7 +96,7 @@ export class SearchByTitleTool implements vscode.LanguageModelTool<SearchByTitle
     
     if (!keywords || keywords.length === 0) {
       return new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart('请提供至少一个搜索关键词。')
+        new vscode.LanguageModelTextPart(vscode.l10n.t('Please provide at least one search keyword.'))
       ]);
     }
 
@@ -105,7 +105,7 @@ export class SearchByTitleTool implements vscode.LanguageModelTool<SearchByTitle
       
       if (results.length === 0) {
         return new vscode.LanguageModelToolResult([
-          new vscode.LanguageModelTextPart(`没有找到标题包含关键词 "${keywords.join(', ')}" 的聊天摘要。`)
+          new vscode.LanguageModelTextPart(vscode.l10n.t('No chat summaries matching the keywords were found.'))
         ]);
       }
 
@@ -115,36 +115,36 @@ export class SearchByTitleTool implements vscode.LanguageModelTool<SearchByTitle
       ]);
     } catch (error) {
       return new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart(`搜索失败: ${error}`)
+        new vscode.LanguageModelTextPart(vscode.l10n.t('Failed to search: {0}', String(error)))
       ]);
     }
   }
 
   private formatResults(results: any[], level: FeedbackLevel, keywords: string[]): string {
-    let output = `搜索关键词: ${keywords.join(', ')}\n`;
-    output += `找到 ${results.length} 个匹配的聊天摘要:\n\n`;
+    let output = `Keywords: ${keywords.join(', ')}\n`;
+    output += vscode.l10n.t('Found {0} chat summaries:', results.length) + '\n\n';
     
     for (const result of results) {
       output += `## ${result.title}\n`;
-      output += `文件: ${result.fileName}\n`;
+      output += vscode.l10n.t('File: {0}', result.fileName) + '\n';
       if (result.scope) {
-        output += `范围: ${result.scope === 'workspace' ? '工作区' : '全局'}\n`;
+        output += (result.scope === 'workspace' ? vscode.l10n.t('Scope: workspace') : vscode.l10n.t('Scope: global')) + '\n';
       }
       
       if (level !== 'TITLE_ONLY' && result.description) {
-        output += `描述: ${result.description}\n`;
+        output += vscode.l10n.t('Description: {0}', result.description) + '\n';
       }
       
       if ((level === 'META' || level === 'ALL') && result.metadata) {
-        output += `工作区: ${result.metadata.workplace}\n`;
+        output += vscode.l10n.t('Workspace: {0}', result.metadata.workplace) + '\n';
         if (result.metadata.project) {
-          output += `项目: ${result.metadata.project}\n`;
+          output += vscode.l10n.t('Project: {0}', result.metadata.project) + '\n';
         }
         if (result.metadata.type) {
-          output += `类型: ${result.metadata.type}\n`;
+          output += vscode.l10n.t('Type: {0}', result.metadata.type) + '\n';
         }
         if (result.metadata.solved_lists && result.metadata.solved_lists.length > 0) {
-          output += `完成任务:\n`;
+          output += vscode.l10n.t('Completed tasks:') + '\n';
           for (const task of result.metadata.solved_lists) {
             if (task) {
               output += `  - ${task}\n`;
@@ -154,7 +154,7 @@ export class SearchByTitleTool implements vscode.LanguageModelTool<SearchByTitle
       }
       
       if (level === 'ALL' && result.content) {
-        output += `\n内容:\n${result.content}\n`;
+        output += '\n' + vscode.l10n.t('Content:') + '\n' + result.content + '\n';
       }
       
       output += '\n---\n\n';
@@ -177,7 +177,7 @@ export class SearchByMetaTool implements vscode.LanguageModelTool<SearchByMetaIn
     
     if (!keywords || keywords.length === 0) {
       return new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart('请提供至少一个搜索关键词。')
+        new vscode.LanguageModelTextPart(vscode.l10n.t('Please provide at least one search keyword.'))
       ]);
     }
 
@@ -186,7 +186,7 @@ export class SearchByMetaTool implements vscode.LanguageModelTool<SearchByMetaIn
       
       if (results.length === 0) {
         return new vscode.LanguageModelToolResult([
-          new vscode.LanguageModelTextPart(`没有找到元数据包含关键词 "${keywords.join(', ')}" 的聊天摘要。`)
+          new vscode.LanguageModelTextPart(vscode.l10n.t('No chat summaries matching the keywords were found.'))
         ]);
       }
 
@@ -196,36 +196,36 @@ export class SearchByMetaTool implements vscode.LanguageModelTool<SearchByMetaIn
       ]);
     } catch (error) {
       return new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart(`搜索失败: ${error}`)
+        new vscode.LanguageModelTextPart(vscode.l10n.t('Failed to search: {0}', String(error)))
       ]);
     }
   }
 
   private formatResults(results: any[], level: FeedbackLevel, keywords: string[]): string {
-    let output = `搜索关键词: ${keywords.join(', ')}\n`;
-    output += `找到 ${results.length} 个匹配的聊天摘要:\n\n`;
+    let output = `Keywords: ${keywords.join(', ')}\n`;
+    output += vscode.l10n.t('Found {0} chat summaries:', results.length) + '\n\n';
     
     for (const result of results) {
       output += `## ${result.title}\n`;
-      output += `文件: ${result.fileName}\n`;
+      output += vscode.l10n.t('File: {0}', result.fileName) + '\n';
       if (result.scope) {
-        output += `范围: ${result.scope === 'workspace' ? '工作区' : '全局'}\n`;
+        output += (result.scope === 'workspace' ? vscode.l10n.t('Scope: workspace') : vscode.l10n.t('Scope: global')) + '\n';
       }
       
       if (level !== 'TITLE_ONLY' && result.description) {
-        output += `描述: ${result.description}\n`;
+        output += vscode.l10n.t('Description: {0}', result.description) + '\n';
       }
       
       if ((level === 'META' || level === 'ALL') && result.metadata) {
-        output += `工作区: ${result.metadata.workplace}\n`;
+        output += vscode.l10n.t('Workspace: {0}', result.metadata.workplace) + '\n';
         if (result.metadata.project) {
-          output += `项目: ${result.metadata.project}\n`;
+          output += vscode.l10n.t('Project: {0}', result.metadata.project) + '\n';
         }
         if (result.metadata.type) {
-          output += `类型: ${result.metadata.type}\n`;
+          output += vscode.l10n.t('Type: {0}', result.metadata.type) + '\n';
         }
         if (result.metadata.solved_lists && result.metadata.solved_lists.length > 0) {
-          output += `完成任务:\n`;
+          output += vscode.l10n.t('Completed tasks:') + '\n';
           for (const task of result.metadata.solved_lists) {
             if (task) {
               output += `  - ${task}\n`;
@@ -235,7 +235,7 @@ export class SearchByMetaTool implements vscode.LanguageModelTool<SearchByMetaIn
       }
       
       if (level === 'ALL' && result.content) {
-        output += `\n内容:\n${result.content}\n`;
+        output += '\n' + vscode.l10n.t('Content:') + '\n' + result.content + '\n';
       }
       
       output += '\n---\n\n';

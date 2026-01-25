@@ -1,0 +1,22 @@
+{
+  "extension.description": "Agent Chat History Summary Manager - Manage and search your AI chat history summaries",
+  "viewsContainer.title": "My Last Chat",
+  "view.chatList.name": "Chat Summaries",
+  "command.refresh.title": "Refresh Chat List",
+  "command.createNew.title": "Create New Chat Summary",
+  "command.openSettings.title": "Open Settings",
+  "command.openFile.title": "Open Chat Summary File",
+  "command.openInEditor.title": "My Last Chat (Editor view)",
+  "command.createNewFromPanel.title": "Create New Chat Summary",
+  "config.title": "My Last Chat",
+  "config.storageLocation.description": "Storage location for chat summaries: workspace (in workspace) or global (global storage)",
+  "config.globalStoragePath.description": "Global storage path (used when storageLocation is global)",
+  "config.autoHideControls.description": "Automatically hide top search and filter controls when scrolling the list",
+  "tool.getLastChatsList.description": "Get a list of all chat summaries, returning title, description and metadata",
+  "tool.getLastChatsList.feedbackLevel.description": "Level of detail for returned information: TITLE_ONLY (title only), DESCRIPTION (title + description), META (all metadata), ALL (full text)",
+  "tool.getLastChatsList.scope.description": "Search scope: workspace (workspace only), global (global only), all (all)",
+  "tool.searchByTitle.description": "Search chat summaries by matching keywords in the title",
+  "tool.searchByTitle.keywords.description": "List of search keywords, multiple keywords expand the search scope",
+  "tool.searchByMeta.description": "Search chat summaries by matching keywords in metadata",
+  "tool.searchByMeta.keywords.description": "List of search keywords, will match in all metadata fields"
+}

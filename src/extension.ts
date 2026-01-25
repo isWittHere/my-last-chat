@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('myLastChat.refresh', async () => {
       await chatListProvider.refresh();
-      vscode.window.showInformationMessage('聊天列表已刷新');
+      vscode.window.showInformationMessage(vscode.l10n.t('Chat list refreshed'));
     })
   );
 
@@ -42,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
         await vscode.window.showTextDocument(document);
         await chatListProvider.refresh();
       } else {
-        vscode.window.showErrorMessage('创建聊天摘要失败');
+        vscode.window.showErrorMessage(vscode.l10n.t('Failed to create chat summary'));
       }
     })
   );
@@ -86,7 +86,7 @@ export function activate(context: vscode.ExtensionContext) {
           ChatListPanel.currentPanel.refresh();
         }
       } else {
-        vscode.window.showErrorMessage('创建聊天摘要失败');
+        vscode.window.showErrorMessage(vscode.l10n.t('Failed to create chat summary'));
       }
     })
   );
