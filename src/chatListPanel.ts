@@ -176,6 +176,10 @@ export class ChatListPanel {
       case 'attachToChat':
         await vscode.commands.executeCommand('workbench.action.chat.attachFile', vscode.Uri.file(data.filePath));
         break;
+      case 'createInFolder':
+        await this._storageService.createNewSummaryInFolder(data.folderPath);
+        await this._refresh();
+        break;
     }
   }
 
@@ -289,6 +293,8 @@ export class ChatListPanel {
       favorite: s.metadata.favorite || false,
       tags: s.metadata.tags || [],
       scope: (s as any).scope || 'workspace',
+      folderName: s.folderName || undefined,
+      folderPath: s.folderPath || undefined,
     }));
   }
 }

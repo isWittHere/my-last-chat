@@ -114,11 +114,11 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }, 300);
 
-  // 监听工作区存储路径
+  // 监听工作区存储路径（包括子文件夹）
   const workspacePath = storageService.getWorkspaceStoragePath();
   if (workspacePath) {
     const workspaceWatcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(workspacePath, '*.md')
+      new vscode.RelativePattern(workspacePath, '**/*.md')
     );
     workspaceWatcher.onDidCreate(() => debouncedRefresh());
     workspaceWatcher.onDidChange(() => debouncedRefresh());
@@ -126,11 +126,11 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(workspaceWatcher);
   }
 
-  // 监听全局存储路径（如果不同于工作区路径）
+  // 监听全局存储路径（如果不同于工作区路径，包括子文件夹）
   const globalPath = storageService.getGlobalStoragePath();
   if (globalPath !== workspacePath) {
     const globalWatcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(globalPath, '*.md')
+      new vscode.RelativePattern(globalPath, '**/*.md')
     );
     globalWatcher.onDidCreate(() => debouncedRefresh());
     globalWatcher.onDidChange(() => debouncedRefresh());

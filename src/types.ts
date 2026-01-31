@@ -48,6 +48,26 @@ export interface ChatSummary {
   content: string;
   /** 存储范围 */
   scope?: StorageScope;
+  /** 所属文件夹名称（仅子文件夹内的文件有此字段） */
+  folderName?: string;
+  /** 所属文件夹路径（仅子文件夹内的文件有此字段） */
+  folderPath?: string;
+}
+
+/**
+ * 子文件夹分组
+ */
+export interface FolderGroup {
+  /** 文件夹名称 */
+  folderName: string;
+  /** 文件夹完整路径 */
+  folderPath: string;
+  /** 文件夹内的聊天记录 */
+  items: ChatSummary[];
+  /** 文件夹内最新文件的时间（用于时间分组） */
+  latestTime: string;
+  /** 存储范围 */
+  scope?: StorageScope;
 }
 
 /**
