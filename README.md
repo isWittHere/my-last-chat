@@ -67,11 +67,11 @@ All chat summaries are stored as Markdown files in the `.myLastChat` folder, eac
 
 Provides three extension tools for GitHub Copilot:
 
-| Tool | Reference Name | Function |
-|------|---------------|----------|
-| `myLastChat_getLastChatsList` | `@lastchats` | Get all chat summary lists |
-| `myLastChat_searchByTitle` | - | Search summaries by title keywords |
-| `myLastChat_searchByMeta` | - | Search summaries by metadata fields |
+| Tool  | Function |
+|------|----------|
+| `myLastChat_getLastChatsList` | Get all chat summary lists |
+| `myLastChat_searchByTitle` | Search summaries by title keywords |
+| `myLastChat_searchByMeta` | Search summaries by metadata fields |
 
 **Feedback Levels**: 
 - `TITLE_ONLY` - Returns title only
@@ -81,7 +81,7 @@ Provides three extension tools for GitHub Copilot:
 
 Example:
 ```
-@workspace Find all debugging summaries using @lastchats
+Find all debugging summaries using MyLastChats tools
 ```
 
 ### 🚀 Quick Insert to Chat
@@ -118,7 +118,7 @@ Record chat content here...
 This is a companion prompt file that can be used in Copilot Chat:
 
 ```
-@workspace /compact
+/compact
 ```
 
 Features:

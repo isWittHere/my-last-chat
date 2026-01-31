@@ -67,11 +67,11 @@ My Last Chat 是一个 VS Code 扩展，用于管理和搜索您的 AI 聊天历
 
 为 GitHub Copilot 提供三个拓展工具：
 
-| 工具 | 引用名称 | 功能 |
-|------|---------|------|
-| `myLastChat_getLastChatsList` | `@lastchats` | 获取所有聊天摘要列表 |
-| `myLastChat_searchByTitle` | - | 按标题关键词搜索摘要 |
-| `myLastChat_searchByMeta` | - | 按元数据字段搜索摘要 |
+| 工具 | 功能 |
+|------|------|
+| `myLastChat_getLastChatsList` | 获取所有聊天摘要列表 |
+| `myLastChat_searchByTitle` | 按标题关键词搜索摘要 |
+| `myLastChat_searchByMeta` | 按元数据字段搜索摘要 |
 
 **反馈级别**: 
 - `TITLE_ONLY` - 仅返回标题
@@ -81,7 +81,7 @@ My Last Chat 是一个 VS Code 扩展，用于管理和搜索您的 AI 聊天历
 
 示例：
 ```
-@workspace 使用 @lastchats 查找所有关于调试的摘要
+使用 MyLastChats 工具查找所有关于调试的摘要
 ```
 
 ### 🚀 快速插入到聊天
