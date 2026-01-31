@@ -52,6 +52,7 @@ export interface WebviewI18n {
   insertToChat: string;
   detailedView: string;
   compactView: string;
+  andMore: string;
 }
 
 /**
@@ -86,6 +87,7 @@ export function getDefaultI18n(): WebviewI18n {
     insertToChat: vscode.l10n.t('Insert to chat'),
     detailedView: vscode.l10n.t('Detailed view'),
     compactView: vscode.l10n.t('Compact view'),
+    andMore: vscode.l10n.t('and {0} more'),
   };
 }
 
@@ -657,7 +659,8 @@ export function getSharedStyles(isPanel: boolean = false): string {
       line-height: 1.4;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
       pointer-events: none;
-      white-space: nowrap;
+      white-space: pre-line;
+      max-width: 300px;
       opacity: 0;
       transition: opacity 0.15s ease;
     }
@@ -726,21 +729,27 @@ export function getSharedStyles(isPanel: boolean = false): string {
       text-decoration: underline;
     }
     .chat-item.compact .act-btn {
-      opacity: 0;
-      padding: 2px 4px;
+      width: 0;
+      padding: 0;
+      overflow: hidden;
+      visibility: hidden;
       background: transparent;
       border: none;
       cursor: pointer;
       color: var(--vscode-descriptionForeground);
       border-radius: 3px;
-      transition: opacity 0.15s, background 0.1s;
+      transition: width 0.15s, padding 0.15s, visibility 0.15s, background 0.1s;
     }
     .chat-item.compact .act-btn.attach {
-      opacity: 1;
+      width: auto;
+      padding: 2px 4px;
+      visibility: visible;
       transition: all 0.15s;
     }
     .chat-item.compact:hover .act-btn {
-      opacity: 1;
+      width: auto;
+      padding: 2px 4px;
+      visibility: visible;
     }
     .chat-item.compact .act-btn:hover {
       background: var(--vscode-toolbar-hoverBackground);
@@ -867,7 +876,8 @@ export function getSharedScript(i18n: WebviewI18n): string {
           if (text) {
             if (tooltipTimer) clearTimeout(tooltipTimer);
             tooltipTimer = setTimeout(() => {
-              customTooltip.textContent = text;
+              // 处理转义的换行符
+              customTooltip.textContent = text.replace(/\\\\n/g, '\\n');
               const rect = target.getBoundingClientRect();
               let left = rect.left;
               let top = rect.bottom + 4;
@@ -1379,19 +1389,23 @@ export function getSharedScript(i18n: WebviewI18n): string {
         // 根据当前视图模式生成不同的 HTML 结构
         if (currentViewMode === 'compact') {
           // 紧凑视图：扁平结构，与文件夹行一致
+          // tooltip 显示完整标题 + 时间戳
+          const compactTooltip = esc(it.title) + '\\n' + formatExactTime(timeValue);
           html += '<div class="chat-item compact" data-path="' + esc(it.filePath) + '" data-fn="' + esc(it.fileName) + '">';
           html += '<span class="item-icon codicon ' + typeIcon + '"></span>';
-          html += '<span class="item-title">' + esc(it.title) + '</span>';
+          html += '<span class="item-title" data-tooltip="' + compactTooltip + '">' + esc(it.title) + '</span>';
           html += '<button class="act-btn del" data-act="del" data-tooltip="' + i18n.delete + '"><span class="codicon codicon-trash"></span></button>';
           html += '<button class="act-btn fav ' + (it.favorite ? 'active' : '') + '" data-act="fav" data-tooltip="' + i18n.favorite + '"><span class="codicon ' + (it.favorite ? 'codicon-star-full' : 'codicon-star-empty') + '"></span></button>';
           html += '<button class="act-btn attach" data-act="attach" data-tooltip="' + i18n.insertToChat + '"><span class="codicon codicon-indent"></span></button>';
           html += '</div>';
         } else {
           // 详细视图：嵌套结构
+          // tooltip 显示完整标题 + 时间戳
+          const detailedTooltip = esc(it.title) + '\\n' + formatExactTime(timeValue);
           html += '<div class="chat-item" data-path="' + esc(it.filePath) + '" data-fn="' + esc(it.fileName) + '">';
           html += '<span class="item-icon codicon ' + typeIcon + '"></span>';
           html += '<div class="item-content">';
-          html += '<div class="item-title">' + esc(it.title) + '</div>';
+          html += '<div class="item-title" data-tooltip="' + detailedTooltip + '">' + esc(it.title) + '</div>';
           html += '<div class="item-desc">' + esc(it.description) + '</div>';
           if (it.type || (it.tags && it.tags.length)) {
             html += '<div class="item-tags">';
@@ -1431,9 +1445,27 @@ export function getSharedScript(i18n: WebviewI18n): string {
           collapsed.add('_init_' + folderId); // 标记已初始化
         }
         const isFolderCol = collapsed.has(folderId);
+        
+        // 为折叠的文件夹生成预览 tooltip：显示最新5项标题
+        let folderTooltip = '';
+        if (isFolderCol && folder.items.length > 0) {
+          // 按更新时间排序，取最新5个
+          const sortedItems = [...folder.items].sort((a, b) => {
+            const aTime = new Date(a.updatedAt || a.createdAt).getTime();
+            const bTime = new Date(b.updatedAt || b.createdAt).getTime();
+            return bTime - aTime;
+          });
+          const previewItems = sortedItems.slice(0, 5);
+          const previewTitles = previewItems.map(it => '• ' + it.title).join('\\n');
+          folderTooltip = previewTitles;
+          if (folder.items.length > 5) {
+            folderTooltip += '\\n' + i18n.andMore.replace('{0}', folder.items.length - 5);
+          }
+        }
+        
         let html = '';
         html += '<div class="folder-group">';
-        html += '<div class="folder-header" data-folder="' + folderId + '" data-folder-path="' + esc(folder.folderPath) + '">';
+        html += '<div class="folder-header" data-folder="' + folderId + '" data-folder-path="' + esc(folder.folderPath) + '"' + (folderTooltip ? ' data-tooltip="' + esc(folderTooltip) + '"' : '') + '>';
         html += '<span class="folder-icon codicon ' + (isFolderCol ? 'codicon-folder' : 'codicon-folder-opened') + '"></span>';
         html += '<span class="folder-name">' + esc(folder.folderName) + '</span>';
         html += '<span class="folder-count">(' + folder.items.length + ')</span>';
@@ -1528,10 +1560,26 @@ export function getSharedScript(i18n: WebviewI18n): string {
             collapsed.delete(folderId);
             icon.className = 'folder-icon codicon codicon-folder-opened';
             items.classList.remove('collapsed');
+            // 展开时移除 tooltip（不需要预览）
+            h.removeAttribute('data-tooltip');
           } else {
             collapsed.add(folderId);
             icon.className = 'folder-icon codicon codicon-folder';
             items.classList.add('collapsed');
+            // 折叠时重新生成 tooltip 预览
+            const folderItems = Array.from(items.querySelectorAll('.chat-item'));
+            if (folderItems.length > 0) {
+              // 获取最新5项标题（按DOM顺序，已排序）
+              const previewTitles = folderItems.slice(0, 5).map(item => {
+                const titleEl = item.querySelector('.item-title');
+                return '• ' + (titleEl ? titleEl.textContent : '');
+              }).join('\\\\n');
+              let folderTooltip = previewTitles;
+              if (folderItems.length > 5) {
+                folderTooltip += '\\\\n' + i18n.andMore.replace('{0}', folderItems.length - 5);
+              }
+              h.setAttribute('data-tooltip', folderTooltip);
+            }
           }
         };
       });
