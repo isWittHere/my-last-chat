@@ -200,6 +200,8 @@ export class ChatStorageService {
       filePath: summary.filePath,
       fileName: summary.fileName,
       title: summary.metadata.title,
+      folderName: summary.folderName,
+      folderPath: summary.folderPath,
     };
 
     switch (level) {

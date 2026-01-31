@@ -46,6 +46,9 @@ export class GetLastChatsListTool implements vscode.LanguageModelTool<GetLastCha
     for (const result of results) {
       output += `## ${result.title}\n`;
       output += vscode.l10n.t('File: {0}', result.fileName) + '\n';
+      if (result.folderName) {
+        output += vscode.l10n.t('Folder: {0}', result.folderName) + '\n';
+      }
       if (result.scope) {
         output += (result.scope === 'workspace' ? vscode.l10n.t('Scope: workspace') : vscode.l10n.t('Scope: global')) + '\n';
       }
@@ -127,6 +130,9 @@ export class SearchByTitleTool implements vscode.LanguageModelTool<SearchByTitle
     for (const result of results) {
       output += `## ${result.title}\n`;
       output += vscode.l10n.t('File: {0}', result.fileName) + '\n';
+      if (result.folderName) {
+        output += vscode.l10n.t('Folder: {0}', result.folderName) + '\n';
+      }
       if (result.scope) {
         output += (result.scope === 'workspace' ? vscode.l10n.t('Scope: workspace') : vscode.l10n.t('Scope: global')) + '\n';
       }
@@ -208,6 +214,9 @@ export class SearchByMetaTool implements vscode.LanguageModelTool<SearchByMetaIn
     for (const result of results) {
       output += `## ${result.title}\n`;
       output += vscode.l10n.t('File: {0}', result.fileName) + '\n';
+      if (result.folderName) {
+        output += vscode.l10n.t('Folder: {0}', result.folderName) + '\n';
+      }
       if (result.scope) {
         output += (result.scope === 'workspace' ? vscode.l10n.t('Scope: workspace') : vscode.l10n.t('Scope: global')) + '\n';
       }

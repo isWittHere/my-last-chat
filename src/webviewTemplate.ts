@@ -445,6 +445,7 @@ export function getSharedStyles(isPanel: boolean = false): string {
     .item-icon.codicon-bug { color: #ef5350; }
     .item-icon.codicon-checklist { color: #66bb6a; }
     .item-icon.codicon-file-text { color: #ab47bc; }
+    .item-icon.codicon-book { color: #e48900; }
     .item-icon.codicon-comment-discussion { color: var(--vscode-descriptionForeground); }
     
     /* 浅色主题 - 使用稍暗的颜色以确保可读性 */
@@ -459,6 +460,9 @@ export function getSharedStyles(isPanel: boolean = false): string {
     }
     body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-file-text { 
       color: #8e24aa; 
+    }
+    body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-book { 
+      color: #d77600; 
     }
     
     /* 暗色主题 - 使用更亮的颜色以提高对比度 (优先级最高) */
@@ -478,6 +482,10 @@ export function getSharedStyles(isPanel: boolean = false): string {
     body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-file-text { 
       color: #c77dd1; 
     }
+    body[data-vscode-theme-kind="vscode-dark"] .item-icon.codicon-book,
+    body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-book { 
+      color: #ffcc80; 
+    }
     
     /* 右侧内容列 */
     .item-content {
@@ -487,7 +495,7 @@ export function getSharedStyles(isPanel: boolean = false): string {
     
     /* 标题 */
     .item-title {
-      font-weight: 600;
+      font-weight: 400;
       font-size: 13px;
       line-height: 1.4;
       margin-bottom: 3px;
@@ -501,7 +509,8 @@ export function getSharedStyles(isPanel: boolean = false): string {
     
     /* 描述 */
     .item-desc {
-      font-size: 11px;
+      font-size: 12px;
+      font-weight: 400;
       color: var(--vscode-descriptionForeground);
       line-height: 1.3;
       margin-bottom: 4px;
@@ -540,13 +549,15 @@ export function getSharedStyles(isPanel: boolean = false): string {
     .item-type.debug { background: #a83b34; color: #fff; }
     .item-type.planning { background: #2c7e49; color: #fff; }
     .item-type.spec { background: #6a1f8f; color: #fff; }
+    .item-type.knowledge { background: #e65100; color: #fff; }
     
     /* 底部元信息行 */
     .item-meta {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 10px;
+      font-size: 11px;
+      font-weight: 400;
     }
     .meta-left {
       display: flex;
@@ -555,7 +566,11 @@ export function getSharedStyles(isPanel: boolean = false): string {
       flex: 1;
       min-width: 0;
     }
-    .item-time { color: var(--vscode-descriptionForeground); white-space: nowrap; }
+    .item-time { 
+      color: var(--vscode-descriptionForeground); 
+      white-space: nowrap;
+      cursor: default;
+    }
     
     /* 操作按钮 */
     .item-actions {
@@ -649,6 +664,7 @@ export function getControlsHtml(i18n: WebviewI18n): string {
             <div class="custom-select-option" data-value="debug">Debug</div>
             <div class="custom-select-option" data-value="planning">Planning</div>
             <div class="custom-select-option" data-value="spec">Spec</div>
+            <div class="custom-select-option" data-value="knowledge">Knowledge</div>
           </div>
         </div>
         <div class="custom-select" id="scopeSelect" data-value="workspace">
@@ -992,6 +1008,7 @@ export function getSharedScript(i18n: WebviewI18n): string {
         case 'debug': return 'codicon-bug';
         case 'planning': return 'codicon-checklist';
         case 'spec': return 'codicon-file-text';
+        case 'knowledge': return 'codicon-book';
         default: return 'codicon-comment-discussion';
       }
     }
@@ -1064,6 +1081,19 @@ export function getSharedScript(i18n: WebviewI18n): string {
       if (hrs < 24) return i18n.hoursAgo.replace('{0}', hrs);
       if (days < 7) return i18n.daysAgo.replace('{0}', days);
       return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+    
+    function formatExactTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
     }
     
     function getGroup(iso) {
@@ -1144,6 +1174,7 @@ export function getSharedScript(i18n: WebviewI18n): string {
       // 渲染函数：单个聊天项
       function renderItem(it) {
         const typeIcon = getTypeIcon(it.type);
+        const timeValue = it.updatedAt || it.createdAt;
         let html = '';
         html += '<div class="chat-item" data-path="' + esc(it.filePath) + '" data-fn="' + esc(it.fileName) + '">';
         html += '<span class="item-icon codicon ' + typeIcon + '"></span>';
@@ -1160,7 +1191,7 @@ export function getSharedScript(i18n: WebviewI18n): string {
         }
         html += '<div class="item-meta">';
         html += '<div class="meta-left">';
-        html += '<span class="item-time">' + formatTime(it.updatedAt || it.createdAt) + '</span>';
+        html += '<span class="item-time" title="' + formatExactTime(timeValue) + '">' + formatTime(timeValue) + '</span>';
         html += '</div>';
         html += '<div class="item-actions">';
         html += '<button class="act-btn del" data-act="del" title="' + i18n.delete + '"><span class="codicon codicon-trash"></span></button>';
