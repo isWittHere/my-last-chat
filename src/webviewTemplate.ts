@@ -50,6 +50,8 @@ export interface WebviewI18n {
   copyLink: string;
   favorite: string;
   insertToChat: string;
+  detailedView: string;
+  compactView: string;
 }
 
 /**
@@ -82,6 +84,8 @@ export function getDefaultI18n(): WebviewI18n {
     copyLink: vscode.l10n.t('Copy link'),
     favorite: vscode.l10n.t('Favorite'),
     insertToChat: vscode.l10n.t('Insert to chat'),
+    detailedView: vscode.l10n.t('Detailed view'),
+    compactView: vscode.l10n.t('Compact view'),
   };
 }
 
@@ -639,6 +643,121 @@ export function getSharedStyles(isPanel: boolean = false): string {
     }
     .empty-state .codicon { font-size: 32px; margin-bottom: 8px; display: block; }
     .empty-text { font-size: 12px; }
+    
+    /* VS Code 风格工具提示 */
+    .custom-tooltip {
+      position: fixed;
+      z-index: 1000;
+      padding: 4px 8px;
+      background: var(--vscode-editorHoverWidget-background);
+      border: 1px solid var(--vscode-editorHoverWidget-border);
+      color: var(--vscode-editorHoverWidget-foreground);
+      border-radius: 3px;
+      font-size: 12px;
+      line-height: 1.4;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+      pointer-events: none;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .custom-tooltip.visible {
+      opacity: 1;
+    }
+    
+    /* 视图切换按钮 */
+    .view-toggle-btn {
+      background: none;
+      border: 1px solid var(--vscode-dropdown-border, rgba(128,128,128,0.35));
+      color: var(--vscode-descriptionForeground);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .view-toggle-btn:hover {
+      background: var(--vscode-list-hoverBackground);
+      border-color: var(--vscode-focusBorder);
+    }
+    .view-toggle-btn .codicon {
+      font-size: 14px;
+    }
+    
+    /* 紧凑视图样式 - 扁平结构，与文件夹行一致 */
+    .chat-item.compact {
+      padding: 0px 8px;
+      font-size: 12px;
+      color: var(--vscode-foreground);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 4px;
+      transition: background 0.1s;
+    }
+    .chat-item.compact:hover {
+      background: var(--vscode-list-hoverBackground);
+    }
+    .chat-item.compact .item-icon {
+      margin-top: 0;
+      font-size: 16px;
+    }
+    .chat-item.compact .item-icon.codicon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chat-item.compact .item-title {
+      font-weight: 400;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin: 0;
+      cursor: pointer;
+    }
+    .chat-item.compact .item-title:hover {
+      color: var(--vscode-textLink-foreground);
+      text-decoration: underline;
+    }
+    .chat-item.compact .act-btn {
+      opacity: 0;
+      padding: 2px 4px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--vscode-descriptionForeground);
+      border-radius: 3px;
+      transition: opacity 0.15s, background 0.1s;
+    }
+    .chat-item.compact .act-btn.attach {
+      opacity: 1;
+      transition: all 0.15s;
+    }
+    .chat-item.compact:hover .act-btn {
+      opacity: 1;
+    }
+    .chat-item.compact .act-btn:hover {
+      background: var(--vscode-toolbar-hoverBackground);
+      color: var(--vscode-foreground);
+    }
+    .chat-item.compact:hover .act-btn.attach {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      padding: 2px 8px;
+      border-radius: 3px;
+    }
+    .chat-item.compact .act-btn.fav.active {
+      color: #f59e0b;
+    }
+    .chat-item.compact .act-btn.del:hover {
+      color: #f44336;
+    }
   `;
 }
 
@@ -696,6 +815,9 @@ export function getControlsHtml(i18n: WebviewI18n): string {
           <span class="codicon codicon-star-empty"></span>
           <span>${i18n.favoritesOnly}</span>
         </label>
+        <button class="view-toggle-btn" id="viewToggle" data-view="detailed" data-tooltip="${i18n.compactView}">
+          <span class="codicon codicon-list-flat"></span>
+        </button>
       </div>
     </div>
     
@@ -728,9 +850,55 @@ export function getSharedScript(i18n: WebviewI18n): string {
     const sortSelect = $('sortSelect');
     const favOnly = $('favOnly');
     const chatList = $('chatList');
+    const customTooltip = $('customTooltip');
+    const viewToggle = $('viewToggle');
     
     let timer;
     let collapsed = new Set();
+    let tooltipTimer;
+    let currentViewMode = 'detailed'; // 'detailed' | 'compact'
+    
+    // 自定义工具提示逻辑
+    function initTooltip() {
+      document.addEventListener('mouseover', e => {
+        const target = e.target.closest('[data-tooltip]');
+        if (target) {
+          const text = target.dataset.tooltip;
+          if (text) {
+            if (tooltipTimer) clearTimeout(tooltipTimer);
+            tooltipTimer = setTimeout(() => {
+              customTooltip.textContent = text;
+              const rect = target.getBoundingClientRect();
+              let left = rect.left;
+              let top = rect.bottom + 4;
+              
+              // 检查是否超出视口右边界
+              customTooltip.classList.add('visible');
+              const tooltipRect = customTooltip.getBoundingClientRect();
+              if (left + tooltipRect.width > window.innerWidth - 8) {
+                left = window.innerWidth - tooltipRect.width - 8;
+              }
+              // 检查是否超出视口下边界
+              if (top + tooltipRect.height > window.innerHeight - 8) {
+                top = rect.top - tooltipRect.height - 4;
+              }
+              
+              customTooltip.style.left = left + 'px';
+              customTooltip.style.top = top + 'px';
+            }, 400);
+          }
+        }
+      });
+      
+      document.addEventListener('mouseout', e => {
+        const target = e.target.closest('[data-tooltip]');
+        if (target) {
+          if (tooltipTimer) clearTimeout(tooltipTimer);
+          customTooltip.classList.remove('visible');
+        }
+      });
+    }
+    initTooltip();
     
     // 自定义下拉选单初始化
     function initCustomSelects() {
@@ -932,6 +1100,31 @@ export function getSharedScript(i18n: WebviewI18n): string {
       }
     }
     
+    // 视图切换逻辑
+    function applyViewMode() {
+      const icon = viewToggle.querySelector('.codicon');
+      if (currentViewMode === 'compact') {
+        icon.className = 'codicon codicon-list-tree';
+        viewToggle.dataset.view = 'compact';
+        viewToggle.dataset.tooltip = i18n.detailedView;
+      } else {
+        icon.className = 'codicon codicon-list-flat';
+        viewToggle.dataset.view = 'detailed';
+        viewToggle.dataset.tooltip = i18n.compactView;
+      }
+    }
+    
+    function toggleViewMode() {
+      currentViewMode = currentViewMode === 'detailed' ? 'compact' : 'detailed';
+      applyViewMode();
+      saveFilterState();
+      // 重新渲染列表以应用新的 HTML 结构
+      render(currentItems);
+    }
+    
+    // 绑定视图切换按钮事件
+    viewToggle.addEventListener('click', toggleViewMode);
+    
     // 保存筛选器状态
     function saveFilterState() {
       const state = {
@@ -939,7 +1132,8 @@ export function getSharedScript(i18n: WebviewI18n): string {
         filter: filterSelect.dataset.value,
         scope: scopeSelect.dataset.value,
         showFavoritesOnly: favOnly.checked,
-        sortBy: sortSelect.dataset.value
+        sortBy: sortSelect.dataset.value,
+        viewMode: currentViewMode
       };
       vscode.setState(state);
     }
@@ -986,6 +1180,11 @@ export function getSharedScript(i18n: WebviewI18n): string {
         if (state.showFavoritesOnly) {
           favOnly.checked = true;
           updateFavIcon();
+        }
+        
+        if (state.viewMode) {
+          currentViewMode = state.viewMode;
+          applyViewMode();
         }
       }
     }
@@ -1176,32 +1375,46 @@ export function getSharedScript(i18n: WebviewI18n): string {
         const typeIcon = getTypeIcon(it.type);
         const timeValue = it.updatedAt || it.createdAt;
         let html = '';
-        html += '<div class="chat-item" data-path="' + esc(it.filePath) + '" data-fn="' + esc(it.fileName) + '">';
-        html += '<span class="item-icon codicon ' + typeIcon + '"></span>';
-        html += '<div class="item-content">';
-        html += '<div class="item-title">' + esc(it.title) + '</div>';
-        html += '<div class="item-desc">' + esc(it.description) + '</div>';
-        if (it.type || (it.tags && it.tags.length)) {
-          html += '<div class="item-tags">';
-          if (it.type) html += '<span class="item-type ' + it.type + '">' + it.type + '</span>';
-          if (it.tags && it.tags.length) {
-            it.tags.forEach(t => { html += '<span class="item-tag">' + esc(t) + '</span>'; });
+        
+        // 根据当前视图模式生成不同的 HTML 结构
+        if (currentViewMode === 'compact') {
+          // 紧凑视图：扁平结构，与文件夹行一致
+          html += '<div class="chat-item compact" data-path="' + esc(it.filePath) + '" data-fn="' + esc(it.fileName) + '">';
+          html += '<span class="item-icon codicon ' + typeIcon + '"></span>';
+          html += '<span class="item-title">' + esc(it.title) + '</span>';
+          html += '<button class="act-btn del" data-act="del" data-tooltip="' + i18n.delete + '"><span class="codicon codicon-trash"></span></button>';
+          html += '<button class="act-btn fav ' + (it.favorite ? 'active' : '') + '" data-act="fav" data-tooltip="' + i18n.favorite + '"><span class="codicon ' + (it.favorite ? 'codicon-star-full' : 'codicon-star-empty') + '"></span></button>';
+          html += '<button class="act-btn attach" data-act="attach" data-tooltip="' + i18n.insertToChat + '"><span class="codicon codicon-indent"></span></button>';
+          html += '</div>';
+        } else {
+          // 详细视图：嵌套结构
+          html += '<div class="chat-item" data-path="' + esc(it.filePath) + '" data-fn="' + esc(it.fileName) + '">';
+          html += '<span class="item-icon codicon ' + typeIcon + '"></span>';
+          html += '<div class="item-content">';
+          html += '<div class="item-title">' + esc(it.title) + '</div>';
+          html += '<div class="item-desc">' + esc(it.description) + '</div>';
+          if (it.type || (it.tags && it.tags.length)) {
+            html += '<div class="item-tags">';
+            if (it.type) html += '<span class="item-type ' + it.type + '">' + it.type + '</span>';
+            if (it.tags && it.tags.length) {
+              it.tags.forEach(t => { html += '<span class="item-tag">' + esc(t) + '</span>'; });
+            }
+            html += '</div>';
           }
+          html += '<div class="item-meta">';
+          html += '<div class="meta-left">';
+          html += '<span class="item-time" data-tooltip="' + formatExactTime(timeValue) + '">' + formatTime(timeValue) + '</span>';
+          html += '</div>';
+          html += '<div class="item-actions">';
+          html += '<button class="act-btn del" data-act="del" data-tooltip="' + i18n.delete + '"><span class="codicon codicon-trash"></span></button>';
+          html += '<button class="act-btn copy" data-act="copy" data-tooltip="' + i18n.copyLink + '"><span class="codicon codicon-copy"></span></button>';
+          html += '<button class="act-btn fav ' + (it.favorite ? 'active' : '') + '" data-act="fav" data-tooltip="' + i18n.favorite + '"><span class="codicon ' + (it.favorite ? 'codicon-star-full' : 'codicon-star-empty') + '"></span></button>';
+          html += '<button class="act-btn attach" data-act="attach" data-tooltip="' + i18n.insertToChat + '"><span class="codicon codicon-indent"></span></button>';
+          html += '</div>';
+          html += '</div>';
+          html += '</div>';
           html += '</div>';
         }
-        html += '<div class="item-meta">';
-        html += '<div class="meta-left">';
-        html += '<span class="item-time" title="' + formatExactTime(timeValue) + '">' + formatTime(timeValue) + '</span>';
-        html += '</div>';
-        html += '<div class="item-actions">';
-        html += '<button class="act-btn del" data-act="del" title="' + i18n.delete + '"><span class="codicon codicon-trash"></span></button>';
-        html += '<button class="act-btn copy" data-act="copy" title="' + i18n.copyLink + '"><span class="codicon codicon-copy"></span></button>';
-        html += '<button class="act-btn fav ' + (it.favorite ? 'active' : '') + '" data-act="fav" title="' + i18n.favorite + '"><span class="codicon ' + (it.favorite ? 'codicon-star-full' : 'codicon-star-empty') + '"></span></button>';
-        html += '<button class="act-btn attach" data-act="attach" title="' + i18n.insertToChat + '"><span class="codicon codicon-indent"></span></button>';
-        html += '</div>';
-        html += '</div>';
-        html += '</div>';
-        html += '</div>';
         return html;
       }
       
@@ -1225,7 +1438,7 @@ export function getSharedScript(i18n: WebviewI18n): string {
         html += '<span class="folder-name">' + esc(folder.folderName) + '</span>';
         html += '<span class="folder-count">(' + folder.items.length + ')</span>';
         html += '<span class="folder-spacer"></span>';
-        html += '<button class="folder-add-btn" data-act="add" title="New Summary"><span class="codicon codicon-add"></span></button>';
+        html += '<button class="folder-add-btn" data-act="add" data-tooltip="New Summary"><span class="codicon codicon-add"></span></button>';
         html += '</div>';
         html += '<div class="folder-items ' + (isFolderCol ? 'collapsed' : '') + '" data-fi="' + folderId + '">';
         folder.items.forEach(it => {
@@ -1399,6 +1612,7 @@ export function generateWebviewHtml(
   <div class="container">
     ${getControlsHtml(i18n)}
   </div>
+  <div class="custom-tooltip" id="customTooltip"></div>
   <script nonce="${nonce}">${getSharedScript(i18n)}</script>
 </body>
 </html>`;
