@@ -25,6 +25,16 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
+  // 注册 WebviewPanel 序列化器，支持重载后恢复编辑器面板
+  context.subscriptions.push(
+    vscode.window.registerWebviewPanelSerializer(ChatListPanel.viewType, {
+      async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+        // 使用 revive 方法恢复面板
+        ChatListPanel.revive(webviewPanel, context.extensionUri, storageService);
+      }
+    })
+  );
+
   // 注册刷新命令
   context.subscriptions.push(
     vscode.commands.registerCommand('myLastChat.refresh', async () => {
@@ -95,17 +105,38 @@ export function activate(context: vscode.ExtensionContext) {
   registerTools(context);
 
   // 监听文件变化以自动刷新
-  const storagePath = storageService.getStoragePath();
-  const watcher = vscode.workspace.createFileSystemWatcher(
-    new vscode.RelativePattern(storagePath, '*.md')
-  );
-  
-  const debouncedRefresh = debounce(() => chatListProvider.refresh(), 300);
-  
-  watcher.onDidCreate(() => debouncedRefresh());
-  watcher.onDidChange(() => debouncedRefresh());
-  watcher.onDidDelete(() => debouncedRefresh());
-  context.subscriptions.push(watcher);
+  // 同时刷新侧边栏和编辑器面板
+  const debouncedRefresh = debounce(() => {
+    chatListProvider.refresh();
+    // 同时刷新编辑器面板（如果存在）
+    if (ChatListPanel.currentPanel) {
+      ChatListPanel.currentPanel.refresh();
+    }
+  }, 300);
+
+  // 监听工作区存储路径
+  const workspacePath = storageService.getWorkspaceStoragePath();
+  if (workspacePath) {
+    const workspaceWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(workspacePath, '*.md')
+    );
+    workspaceWatcher.onDidCreate(() => debouncedRefresh());
+    workspaceWatcher.onDidChange(() => debouncedRefresh());
+    workspaceWatcher.onDidDelete(() => debouncedRefresh());
+    context.subscriptions.push(workspaceWatcher);
+  }
+
+  // 监听全局存储路径（如果不同于工作区路径）
+  const globalPath = storageService.getGlobalStoragePath();
+  if (globalPath !== workspacePath) {
+    const globalWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(globalPath, '*.md')
+    );
+    globalWatcher.onDidCreate(() => debouncedRefresh());
+    globalWatcher.onDidChange(() => debouncedRefresh());
+    globalWatcher.onDidDelete(() => debouncedRefresh());
+    context.subscriptions.push(globalWatcher);
+  }
   
   // 也监听文档保存事件
   context.subscriptions.push(

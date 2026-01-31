@@ -359,11 +359,45 @@ export function getSharedStyles(isPanel: boolean = false): string {
       opacity: 0.75;
       margin-top: 2px;
     }
+    
+    /* 默认后备颜色 (优先级最低) */
     .item-icon.codicon-code { color: #4fc3f7; }
     .item-icon.codicon-bug { color: #ef5350; }
     .item-icon.codicon-checklist { color: #66bb6a; }
     .item-icon.codicon-file-text { color: #ab47bc; }
     .item-icon.codicon-comment-discussion { color: var(--vscode-descriptionForeground); }
+    
+    /* 浅色主题 - 使用稍暗的颜色以确保可读性 */
+    body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-code { 
+      color: #0079dc; 
+    }
+    body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-bug { 
+      color: #d32f2f; 
+    }
+    body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-checklist { 
+      color: #009207; 
+    }
+    body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-file-text { 
+      color: #8e24aa; 
+    }
+    
+    /* 暗色主题 - 使用更亮的颜色以提高对比度 (优先级最高) */
+    body[data-vscode-theme-kind="vscode-dark"] .item-icon.codicon-code,
+    body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-code { 
+      color: #64d8ff; 
+    }
+    body[data-vscode-theme-kind="vscode-dark"] .item-icon.codicon-bug,
+    body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-bug { 
+      color: #ff6b68; 
+    }
+    body[data-vscode-theme-kind="vscode-dark"] .item-icon.codicon-checklist,
+    body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-checklist { 
+      color: #7fcd85; 
+    }
+    body[data-vscode-theme-kind="vscode-dark"] .item-icon.codicon-file-text,
+    body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-file-text { 
+      color: #c77dd1; 
+    }
     
     /* 右侧内容列 */
     .item-content {
