@@ -80,22 +80,46 @@ export class ChatStorageService {
   }
 
   /**
-   * 从指定路径获取所有聊天摘要文件
+   * 从指定路径获取所有聊天摘要文件（包括第二层子文件夹）
    */
   async getChatSummariesFromPath(storagePath: string, scope: StorageScope): Promise<ChatSummary[]> {
     const summaries: ChatSummary[] = [];
 
     try {
       await this.ensureStorageDirectory(storagePath);
-      const files = await fs.promises.readdir(storagePath);
-      const mdFiles = files.filter(file => file.endsWith('.md'));
-
+      const entries = await fs.promises.readdir(storagePath, { withFileTypes: true });
+      
+      // 处理根目录下的 md 文件
+      const mdFiles = entries.filter(entry => entry.isFile() && entry.name.endsWith('.md'));
       for (const file of mdFiles) {
-        const filePath = path.join(storagePath, file);
+        const filePath = path.join(storagePath, file.name);
         const summary = await this.parseChatFile(filePath);
         if (summary) {
           (summary as any).scope = scope;
           summaries.push(summary);
+        }
+      }
+
+      // 处理子文件夹（仅第二层）
+      const subDirs = entries.filter(entry => entry.isDirectory() && !entry.name.startsWith('.'));
+      for (const dir of subDirs) {
+        const subDirPath = path.join(storagePath, dir.name);
+        try {
+          const subEntries = await fs.promises.readdir(subDirPath, { withFileTypes: true });
+          const subMdFiles = subEntries.filter(entry => entry.isFile() && entry.name.endsWith('.md'));
+          
+          for (const file of subMdFiles) {
+            const filePath = path.join(subDirPath, file.name);
+            const summary = await this.parseChatFile(filePath);
+            if (summary) {
+              (summary as any).scope = scope;
+              (summary as any).folderName = dir.name;
+              (summary as any).folderPath = subDirPath;
+              summaries.push(summary);
+            }
+          }
+        } catch (subError) {
+          // 子目录读取失败时静默失败
         }
       }
     } catch (error) {
@@ -176,6 +200,8 @@ export class ChatStorageService {
       filePath: summary.filePath,
       fileName: summary.fileName,
       title: summary.metadata.title,
+      folderName: summary.folderName,
+      folderPath: summary.folderPath,
     };
 
     switch (level) {
@@ -308,6 +334,56 @@ ${vscode.l10n.t('Record chat content here...')}
       return filePath;
     } catch (error) {
       console.error('Failed to create new chat summary:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 在指定文件夹内创建新的聊天摘要文件
+   */
+  async createNewSummaryInFolder(folderPath: string): Promise<string | null> {
+    try {
+      // 确保文件夹存在
+      await fs.promises.mkdir(folderPath, { recursive: true });
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `chat-${timestamp}.md`;
+      const filePath = path.join(folderPath, fileName);
+
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      const defaultWorkplace = workspaceFolders && workspaceFolders.length > 0 
+        ? workspaceFolders[0].uri.fsPath 
+        : '';
+
+      const now = new Date().toISOString();
+      const template = `---
+title: ${vscode.l10n.t('New Chat Summary')}
+description: ${vscode.l10n.t('Please enter chat description')}
+workplace: ${defaultWorkplace}
+project: 
+type: 
+createdAt: ${now}
+updatedAt: ${now}
+favorite: false
+tags: []
+solved_lists:
+  - 
+---
+
+# ${vscode.l10n.t('Chat Summary')}
+
+${vscode.l10n.t('Record chat content here...')}
+`;
+
+      await fs.promises.writeFile(filePath, template, 'utf-8');
+      
+      // 打开新创建的文件
+      const document = await vscode.workspace.openTextDocument(filePath);
+      await vscode.window.showTextDocument(document);
+      
+      return filePath;
+    } catch (error) {
+      console.error('Failed to create new chat summary in folder:', error);
       return null;
     }
   }

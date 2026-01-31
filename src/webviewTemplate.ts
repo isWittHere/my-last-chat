@@ -15,6 +15,10 @@ export interface WebviewDataItem {
   favorite: boolean;
   tags: string[];
   scope: string;
+  /** 所属文件夹名称（仅子文件夹内的文件有此字段） */
+  folderName?: string;
+  /** 所属文件夹路径（仅子文件夹内的文件有此字段） */
+  folderPath?: string;
 }
 
 /**
@@ -46,6 +50,8 @@ export interface WebviewI18n {
   copyLink: string;
   favorite: string;
   insertToChat: string;
+  detailedView: string;
+  compactView: string;
 }
 
 /**
@@ -78,6 +84,8 @@ export function getDefaultI18n(): WebviewI18n {
     copyLink: vscode.l10n.t('Copy link'),
     favorite: vscode.l10n.t('Favorite'),
     insertToChat: vscode.l10n.t('Insert to chat'),
+    detailedView: vscode.l10n.t('Detailed view'),
+    compactView: vscode.l10n.t('Compact view'),
   };
 }
 
@@ -329,11 +337,87 @@ export function getSharedStyles(isPanel: boolean = false): string {
       align-items: center;
       gap: 4px;
       z-index: 10;
+      border-radius: 4px;
+      transition: background 0.1s;
     }
-    .group-header:hover { color: var(--vscode-foreground); }
+    .group-header:hover { 
+      color: var(--vscode-foreground);
+      background: var(--vscode-list-hoverBackground);
+    }
     .group-header .codicon { font-size: 12px; }
     .group-items.collapsed { display: none; }
     .group-count { color: var(--vscode-descriptionForeground); font-weight: normal; }
+    
+    /* 文件夹组样式 */
+    .folder-group {
+      margin: 2px 0;
+    }
+    .folder-header {
+      padding: 0px 8px;
+      font-size: 12px;
+      color: var(--vscode-foreground);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 4px;
+      transition: background 0.1s;
+    }
+    .folder-header:hover {
+      background: var(--vscode-list-hoverBackground);
+    }
+    .folder-header .folder-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      opacity: 0.75;
+      color: var(--vscode-icon-foreground, #c5c5c5);
+    }
+    .folder-header .folder-name {
+      font-weight: 500;
+    }
+    .folder-header .folder-count {
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+      opacity: 0.8;
+      margin-left: 2px;
+    }
+    .folder-header .folder-spacer {
+      flex: 1;
+    }
+    .folder-header .folder-add-btn {
+      opacity: 0;
+      padding: 2px 4px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--vscode-descriptionForeground);
+      border-radius: 3px;
+      transition: opacity 0.15s, background 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .folder-header:hover .folder-add-btn {
+      opacity: 1;
+    }
+    .folder-header .folder-add-btn:hover {
+      background: var(--vscode-toolbar-hoverBackground);
+      color: var(--vscode-foreground);
+    }
+    .folder-header .folder-add-btn .codicon {
+      font-size: 14px;
+    }
+    .folder-items {
+      padding-left: 28px;
+    }
+    .folder-items.collapsed {
+      display: none;
+    }
     
     /* 单项卡片 */
     .chat-item {
@@ -359,11 +443,53 @@ export function getSharedStyles(isPanel: boolean = false): string {
       opacity: 0.75;
       margin-top: 2px;
     }
+    
+    /* 默认后备颜色 (优先级最低) */
     .item-icon.codicon-code { color: #4fc3f7; }
     .item-icon.codicon-bug { color: #ef5350; }
     .item-icon.codicon-checklist { color: #66bb6a; }
     .item-icon.codicon-file-text { color: #ab47bc; }
+    .item-icon.codicon-book { color: #e48900; }
     .item-icon.codicon-comment-discussion { color: var(--vscode-descriptionForeground); }
+    
+    /* 浅色主题 - 使用稍暗的颜色以确保可读性 */
+    body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-code { 
+      color: #0079dc; 
+    }
+    body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-bug { 
+      color: #d32f2f; 
+    }
+    body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-checklist { 
+      color: #009207; 
+    }
+    body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-file-text { 
+      color: #8e24aa; 
+    }
+    body[data-vscode-theme-kind="vscode-light"] .item-icon.codicon-book { 
+      color: #d77600; 
+    }
+    
+    /* 暗色主题 - 使用更亮的颜色以提高对比度 (优先级最高) */
+    body[data-vscode-theme-kind="vscode-dark"] .item-icon.codicon-code,
+    body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-code { 
+      color: #64d8ff; 
+    }
+    body[data-vscode-theme-kind="vscode-dark"] .item-icon.codicon-bug,
+    body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-bug { 
+      color: #ff6b68; 
+    }
+    body[data-vscode-theme-kind="vscode-dark"] .item-icon.codicon-checklist,
+    body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-checklist { 
+      color: #7fcd85; 
+    }
+    body[data-vscode-theme-kind="vscode-dark"] .item-icon.codicon-file-text,
+    body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-file-text { 
+      color: #c77dd1; 
+    }
+    body[data-vscode-theme-kind="vscode-dark"] .item-icon.codicon-book,
+    body[data-vscode-theme-kind="vscode-high-contrast"] .item-icon.codicon-book { 
+      color: #ffcc80; 
+    }
     
     /* 右侧内容列 */
     .item-content {
@@ -373,7 +499,7 @@ export function getSharedStyles(isPanel: boolean = false): string {
     
     /* 标题 */
     .item-title {
-      font-weight: 600;
+      font-weight: 400;
       font-size: 13px;
       line-height: 1.4;
       margin-bottom: 3px;
@@ -387,7 +513,8 @@ export function getSharedStyles(isPanel: boolean = false): string {
     
     /* 描述 */
     .item-desc {
-      font-size: 11px;
+      font-size: 12px;
+      font-weight: 400;
       color: var(--vscode-descriptionForeground);
       line-height: 1.3;
       margin-bottom: 4px;
@@ -426,13 +553,15 @@ export function getSharedStyles(isPanel: boolean = false): string {
     .item-type.debug { background: #a83b34; color: #fff; }
     .item-type.planning { background: #2c7e49; color: #fff; }
     .item-type.spec { background: #6a1f8f; color: #fff; }
+    .item-type.knowledge { background: #e65100; color: #fff; }
     
     /* 底部元信息行 */
     .item-meta {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 10px;
+      font-size: 11px;
+      font-weight: 400;
     }
     .meta-left {
       display: flex;
@@ -441,7 +570,11 @@ export function getSharedStyles(isPanel: boolean = false): string {
       flex: 1;
       min-width: 0;
     }
-    .item-time { color: var(--vscode-descriptionForeground); white-space: nowrap; }
+    .item-time { 
+      color: var(--vscode-descriptionForeground); 
+      white-space: nowrap;
+      cursor: default;
+    }
     
     /* 操作按钮 */
     .item-actions {
@@ -510,6 +643,121 @@ export function getSharedStyles(isPanel: boolean = false): string {
     }
     .empty-state .codicon { font-size: 32px; margin-bottom: 8px; display: block; }
     .empty-text { font-size: 12px; }
+    
+    /* VS Code 风格工具提示 */
+    .custom-tooltip {
+      position: fixed;
+      z-index: 1000;
+      padding: 4px 8px;
+      background: var(--vscode-editorHoverWidget-background);
+      border: 1px solid var(--vscode-editorHoverWidget-border);
+      color: var(--vscode-editorHoverWidget-foreground);
+      border-radius: 3px;
+      font-size: 12px;
+      line-height: 1.4;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+      pointer-events: none;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .custom-tooltip.visible {
+      opacity: 1;
+    }
+    
+    /* 视图切换按钮 */
+    .view-toggle-btn {
+      background: none;
+      border: 1px solid var(--vscode-dropdown-border, rgba(128,128,128,0.35));
+      color: var(--vscode-descriptionForeground);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .view-toggle-btn:hover {
+      background: var(--vscode-list-hoverBackground);
+      border-color: var(--vscode-focusBorder);
+    }
+    .view-toggle-btn .codicon {
+      font-size: 14px;
+    }
+    
+    /* 紧凑视图样式 - 扁平结构，与文件夹行一致 */
+    .chat-item.compact {
+      padding: 0px 8px;
+      font-size: 12px;
+      color: var(--vscode-foreground);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 4px;
+      transition: background 0.1s;
+    }
+    .chat-item.compact:hover {
+      background: var(--vscode-list-hoverBackground);
+    }
+    .chat-item.compact .item-icon {
+      margin-top: 0;
+      font-size: 16px;
+    }
+    .chat-item.compact .item-icon.codicon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chat-item.compact .item-title {
+      font-weight: 400;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin: 0;
+      cursor: pointer;
+    }
+    .chat-item.compact .item-title:hover {
+      color: var(--vscode-textLink-foreground);
+      text-decoration: underline;
+    }
+    .chat-item.compact .act-btn {
+      opacity: 0;
+      padding: 2px 4px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--vscode-descriptionForeground);
+      border-radius: 3px;
+      transition: opacity 0.15s, background 0.1s;
+    }
+    .chat-item.compact .act-btn.attach {
+      opacity: 1;
+      transition: all 0.15s;
+    }
+    .chat-item.compact:hover .act-btn {
+      opacity: 1;
+    }
+    .chat-item.compact .act-btn:hover {
+      background: var(--vscode-toolbar-hoverBackground);
+      color: var(--vscode-foreground);
+    }
+    .chat-item.compact:hover .act-btn.attach {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      padding: 2px 8px;
+      border-radius: 3px;
+    }
+    .chat-item.compact .act-btn.fav.active {
+      color: #f59e0b;
+    }
+    .chat-item.compact .act-btn.del:hover {
+      color: #f44336;
+    }
   `;
 }
 
@@ -535,6 +783,7 @@ export function getControlsHtml(i18n: WebviewI18n): string {
             <div class="custom-select-option" data-value="debug">Debug</div>
             <div class="custom-select-option" data-value="planning">Planning</div>
             <div class="custom-select-option" data-value="spec">Spec</div>
+            <div class="custom-select-option" data-value="knowledge">Knowledge</div>
           </div>
         </div>
         <div class="custom-select" id="scopeSelect" data-value="workspace">
@@ -566,6 +815,9 @@ export function getControlsHtml(i18n: WebviewI18n): string {
           <span class="codicon codicon-star-empty"></span>
           <span>${i18n.favoritesOnly}</span>
         </label>
+        <button class="view-toggle-btn" id="viewToggle" data-view="detailed" data-tooltip="${i18n.compactView}">
+          <span class="codicon codicon-list-flat"></span>
+        </button>
       </div>
     </div>
     
@@ -598,9 +850,55 @@ export function getSharedScript(i18n: WebviewI18n): string {
     const sortSelect = $('sortSelect');
     const favOnly = $('favOnly');
     const chatList = $('chatList');
+    const customTooltip = $('customTooltip');
+    const viewToggle = $('viewToggle');
     
     let timer;
     let collapsed = new Set();
+    let tooltipTimer;
+    let currentViewMode = 'detailed'; // 'detailed' | 'compact'
+    
+    // 自定义工具提示逻辑
+    function initTooltip() {
+      document.addEventListener('mouseover', e => {
+        const target = e.target.closest('[data-tooltip]');
+        if (target) {
+          const text = target.dataset.tooltip;
+          if (text) {
+            if (tooltipTimer) clearTimeout(tooltipTimer);
+            tooltipTimer = setTimeout(() => {
+              customTooltip.textContent = text;
+              const rect = target.getBoundingClientRect();
+              let left = rect.left;
+              let top = rect.bottom + 4;
+              
+              // 检查是否超出视口右边界
+              customTooltip.classList.add('visible');
+              const tooltipRect = customTooltip.getBoundingClientRect();
+              if (left + tooltipRect.width > window.innerWidth - 8) {
+                left = window.innerWidth - tooltipRect.width - 8;
+              }
+              // 检查是否超出视口下边界
+              if (top + tooltipRect.height > window.innerHeight - 8) {
+                top = rect.top - tooltipRect.height - 4;
+              }
+              
+              customTooltip.style.left = left + 'px';
+              customTooltip.style.top = top + 'px';
+            }, 400);
+          }
+        }
+      });
+      
+      document.addEventListener('mouseout', e => {
+        const target = e.target.closest('[data-tooltip]');
+        if (target) {
+          if (tooltipTimer) clearTimeout(tooltipTimer);
+          customTooltip.classList.remove('visible');
+        }
+      });
+    }
+    initTooltip();
     
     // 自定义下拉选单初始化
     function initCustomSelects() {
@@ -802,6 +1100,31 @@ export function getSharedScript(i18n: WebviewI18n): string {
       }
     }
     
+    // 视图切换逻辑
+    function applyViewMode() {
+      const icon = viewToggle.querySelector('.codicon');
+      if (currentViewMode === 'compact') {
+        icon.className = 'codicon codicon-list-tree';
+        viewToggle.dataset.view = 'compact';
+        viewToggle.dataset.tooltip = i18n.detailedView;
+      } else {
+        icon.className = 'codicon codicon-list-flat';
+        viewToggle.dataset.view = 'detailed';
+        viewToggle.dataset.tooltip = i18n.compactView;
+      }
+    }
+    
+    function toggleViewMode() {
+      currentViewMode = currentViewMode === 'detailed' ? 'compact' : 'detailed';
+      applyViewMode();
+      saveFilterState();
+      // 重新渲染列表以应用新的 HTML 结构
+      render(currentItems);
+    }
+    
+    // 绑定视图切换按钮事件
+    viewToggle.addEventListener('click', toggleViewMode);
+    
     // 保存筛选器状态
     function saveFilterState() {
       const state = {
@@ -809,7 +1132,8 @@ export function getSharedScript(i18n: WebviewI18n): string {
         filter: filterSelect.dataset.value,
         scope: scopeSelect.dataset.value,
         showFavoritesOnly: favOnly.checked,
-        sortBy: sortSelect.dataset.value
+        sortBy: sortSelect.dataset.value,
+        viewMode: currentViewMode
       };
       vscode.setState(state);
     }
@@ -857,6 +1181,11 @@ export function getSharedScript(i18n: WebviewI18n): string {
           favOnly.checked = true;
           updateFavIcon();
         }
+        
+        if (state.viewMode) {
+          currentViewMode = state.viewMode;
+          applyViewMode();
+        }
       }
     }
     
@@ -878,6 +1207,7 @@ export function getSharedScript(i18n: WebviewI18n): string {
         case 'debug': return 'codicon-bug';
         case 'planning': return 'codicon-checklist';
         case 'spec': return 'codicon-file-text';
+        case 'knowledge': return 'codicon-book';
         default: return 'codicon-comment-discussion';
       }
     }
@@ -952,6 +1282,19 @@ export function getSharedScript(i18n: WebviewI18n): string {
       return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     }
     
+    function formatExactTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+    
     function getGroup(iso) {
       if (!iso) return i18n.earlier;
       const d = new Date(iso);
@@ -980,36 +1323,76 @@ export function getSharedScript(i18n: WebviewI18n): string {
         return;
       }
       
+      // 分离普通文件和文件夹内的文件
+      const rootItems = [];
+      const folderMap = {}; // folderPath -> { folderName, items, latestTime }
+      
+      items.forEach(it => {
+        if (it.folderName && it.folderPath) {
+          if (!folderMap[it.folderPath]) {
+            folderMap[it.folderPath] = {
+              folderName: it.folderName,
+              folderPath: it.folderPath,
+              items: [],
+              latestTime: it.updatedAt || it.createdAt
+            };
+          }
+          folderMap[it.folderPath].items.push(it);
+          // 更新文件夹的最新时间
+          const currentTime = new Date(it.updatedAt || it.createdAt).getTime();
+          const folderTime = new Date(folderMap[it.folderPath].latestTime).getTime();
+          if (currentTime > folderTime) {
+            folderMap[it.folderPath].latestTime = it.updatedAt || it.createdAt;
+          }
+        } else {
+          rootItems.push(it);
+        }
+      });
+      
+      // 将文件夹作为一个整体加入时间分组
+      const folders = Object.values(folderMap);
+      
       const groups = {};
       groups[i18n.today] = [];
       groups[i18n.yesterday] = [];
       groups[i18n.lastWeek] = [];
       groups[i18n.earlier] = [];
-      items.forEach(it => {
+      
+      // 添加普通文件到对应时间组
+      rootItems.forEach(it => {
         const g = getGroup(it.updatedAt || it.createdAt);
-        groups[g].push(it);
+        groups[g].push({ type: 'item', data: it });
       });
       
-      let html = '';
-      for (const [name, list] of Object.entries(groups)) {
-        if (!list.length) continue;
-        const isCol = collapsed.has(name);
-        html += '<li>';
-        html += '<div class="group-header" data-g="' + name + '">';
-        html += '<span class="codicon ' + (isCol ? 'codicon-chevron-right' : 'codicon-chevron-down') + '"></span>';
-        html += '<span>' + name + '</span>';
-        html += '<span class="group-count">(' + list.length + ')</span>';
-        html += '</div>';
-        html += '<div class="group-items ' + (isCol ? 'collapsed' : '') + '" data-gi="' + name + '">';
+      // 添加文件夹到对应时间组（按最新文件时间）
+      folders.forEach(folder => {
+        const g = getGroup(folder.latestTime);
+        groups[g].push({ type: 'folder', data: folder });
+      });
+      
+      // 渲染函数：单个聊天项
+      function renderItem(it) {
+        const typeIcon = getTypeIcon(it.type);
+        const timeValue = it.updatedAt || it.createdAt;
+        let html = '';
         
-        list.forEach(it => {
-          const typeIcon = getTypeIcon(it.type);
+        // 根据当前视图模式生成不同的 HTML 结构
+        if (currentViewMode === 'compact') {
+          // 紧凑视图：扁平结构，与文件夹行一致
+          html += '<div class="chat-item compact" data-path="' + esc(it.filePath) + '" data-fn="' + esc(it.fileName) + '">';
+          html += '<span class="item-icon codicon ' + typeIcon + '"></span>';
+          html += '<span class="item-title">' + esc(it.title) + '</span>';
+          html += '<button class="act-btn del" data-act="del" data-tooltip="' + i18n.delete + '"><span class="codicon codicon-trash"></span></button>';
+          html += '<button class="act-btn fav ' + (it.favorite ? 'active' : '') + '" data-act="fav" data-tooltip="' + i18n.favorite + '"><span class="codicon ' + (it.favorite ? 'codicon-star-full' : 'codicon-star-empty') + '"></span></button>';
+          html += '<button class="act-btn attach" data-act="attach" data-tooltip="' + i18n.insertToChat + '"><span class="codicon codicon-indent"></span></button>';
+          html += '</div>';
+        } else {
+          // 详细视图：嵌套结构
           html += '<div class="chat-item" data-path="' + esc(it.filePath) + '" data-fn="' + esc(it.fileName) + '">';
           html += '<span class="item-icon codicon ' + typeIcon + '"></span>';
           html += '<div class="item-content">';
           html += '<div class="item-title">' + esc(it.title) + '</div>';
           html += '<div class="item-desc">' + esc(it.description) + '</div>';
-          // 标签行（包括类型和标签）
           if (it.type || (it.tags && it.tags.length)) {
             html += '<div class="item-tags">';
             if (it.type) html += '<span class="item-type ' + it.type + '">' + it.type + '</span>';
@@ -1018,20 +1401,90 @@ export function getSharedScript(i18n: WebviewI18n): string {
             }
             html += '</div>';
           }
-          // 时间/按钮行
           html += '<div class="item-meta">';
           html += '<div class="meta-left">';
-          html += '<span class="item-time">' + formatTime(it.updatedAt || it.createdAt) + '</span>';
+          html += '<span class="item-time" data-tooltip="' + formatExactTime(timeValue) + '">' + formatTime(timeValue) + '</span>';
           html += '</div>';
           html += '<div class="item-actions">';
-          html += '<button class="act-btn del" data-act="del" title="' + i18n.delete + '"><span class="codicon codicon-trash"></span></button>';
-          html += '<button class="act-btn copy" data-act="copy" title="' + i18n.copyLink + '"><span class="codicon codicon-copy"></span></button>';
-          html += '<button class="act-btn fav ' + (it.favorite ? 'active' : '') + '" data-act="fav" title="' + i18n.favorite + '"><span class="codicon ' + (it.favorite ? 'codicon-star-full' : 'codicon-star-empty') + '"></span></button>';
-          html += '<button class="act-btn attach" data-act="attach" title="' + i18n.insertToChat + '"><span class="codicon codicon-indent"></span></button>';
+          html += '<button class="act-btn del" data-act="del" data-tooltip="' + i18n.delete + '"><span class="codicon codicon-trash"></span></button>';
+          html += '<button class="act-btn copy" data-act="copy" data-tooltip="' + i18n.copyLink + '"><span class="codicon codicon-copy"></span></button>';
+          html += '<button class="act-btn fav ' + (it.favorite ? 'active' : '') + '" data-act="fav" data-tooltip="' + i18n.favorite + '"><span class="codicon ' + (it.favorite ? 'codicon-star-full' : 'codicon-star-empty') + '"></span></button>';
+          html += '<button class="act-btn attach" data-act="attach" data-tooltip="' + i18n.insertToChat + '"><span class="codicon codicon-indent"></span></button>';
           html += '</div>';
           html += '</div>';
           html += '</div>';
           html += '</div>';
+        }
+        return html;
+      }
+      
+      // 收集所有文件夹ID，用于默认折叠状态
+      const folderIds = new Set();
+      
+      // 渲染函数：文件夹组
+      function renderFolder(folder) {
+        const folderId = 'folder-' + folder.folderPath.replace(/[^a-zA-Z0-9]/g, '-');
+        folderIds.add(folderId);
+        // 默认折叠：如果这是新的文件夹ID且不在collapsed中，添加到collapsed
+        if (!collapsed.has(folderId) && !collapsed.has('_init_' + folderId)) {
+          collapsed.add(folderId);
+          collapsed.add('_init_' + folderId); // 标记已初始化
+        }
+        const isFolderCol = collapsed.has(folderId);
+        let html = '';
+        html += '<div class="folder-group">';
+        html += '<div class="folder-header" data-folder="' + folderId + '" data-folder-path="' + esc(folder.folderPath) + '">';
+        html += '<span class="folder-icon codicon ' + (isFolderCol ? 'codicon-folder' : 'codicon-folder-opened') + '"></span>';
+        html += '<span class="folder-name">' + esc(folder.folderName) + '</span>';
+        html += '<span class="folder-count">(' + folder.items.length + ')</span>';
+        html += '<span class="folder-spacer"></span>';
+        html += '<button class="folder-add-btn" data-act="add" data-tooltip="New Summary"><span class="codicon codicon-add"></span></button>';
+        html += '</div>';
+        html += '<div class="folder-items ' + (isFolderCol ? 'collapsed' : '') + '" data-fi="' + folderId + '">';
+        folder.items.forEach(it => {
+          html += renderItem(it);
+        });
+        html += '</div>';
+        html += '</div>';
+        return html;
+      }
+      
+      let html = '';
+      for (const [name, list] of Object.entries(groups)) {
+        if (!list.length) continue;
+        const isCol = collapsed.has(name);
+        
+        // 计算总项目数（文件夹内的项目也要计入）
+        let totalCount = 0;
+        list.forEach(entry => {
+          if (entry.type === 'folder') {
+            totalCount += entry.data.items.length;
+          } else {
+            totalCount += 1;
+          }
+        });
+        
+        html += '<li>';
+        html += '<div class="group-header" data-g="' + name + '">';
+        html += '<span class="codicon ' + (isCol ? 'codicon-chevron-right' : 'codicon-chevron-down') + '"></span>';
+        html += '<span>' + name + '</span>';
+        html += '<span class="group-count">(' + totalCount + ')</span>';
+        html += '</div>';
+        html += '<div class="group-items ' + (isCol ? 'collapsed' : '') + '" data-gi="' + name + '">';
+        
+        // 按时间排序：文件夹按最新时间，普通项按更新时间
+        list.sort((a, b) => {
+          const aTime = a.type === 'folder' ? a.data.latestTime : (a.data.updatedAt || a.data.createdAt);
+          const bTime = b.type === 'folder' ? b.data.latestTime : (b.data.updatedAt || b.data.createdAt);
+          return new Date(bTime).getTime() - new Date(aTime).getTime();
+        });
+        
+        list.forEach(entry => {
+          if (entry.type === 'folder') {
+            html += renderFolder(entry.data);
+          } else {
+            html += renderItem(entry.data);
+          }
         });
         
         html += '</div></li>';
@@ -1057,6 +1510,39 @@ export function getSharedScript(i18n: WebviewI18n): string {
             icon.className = 'codicon codicon-chevron-right';
             items.classList.add('collapsed');
           }
+        };
+      });
+      
+      // 文件夹折叠/展开事件
+      document.querySelectorAll('.folder-header').forEach(h => {
+        h.onclick = e => {
+          // 如果点击的是加号按钮，不触发折叠
+          if (e.target.closest('.folder-add-btn')) {
+            return;
+          }
+          e.stopPropagation();
+          const folderId = h.dataset.folder;
+          const icon = h.querySelector('.folder-icon');
+          const items = document.querySelector('[data-fi="' + folderId + '"]');
+          if (collapsed.has(folderId)) {
+            collapsed.delete(folderId);
+            icon.className = 'folder-icon codicon codicon-folder-opened';
+            items.classList.remove('collapsed');
+          } else {
+            collapsed.add(folderId);
+            icon.className = 'folder-icon codicon codicon-folder';
+            items.classList.add('collapsed');
+          }
+        };
+      });
+      
+      // 文件夹新建按钮事件
+      document.querySelectorAll('.folder-add-btn').forEach(btn => {
+        btn.onclick = e => {
+          e.stopPropagation();
+          const header = btn.closest('.folder-header');
+          const folderPath = header.dataset.folderPath;
+          vscode.postMessage({ type: 'createInFolder', folderPath: folderPath });
         };
       });
       
@@ -1126,6 +1612,7 @@ export function generateWebviewHtml(
   <div class="container">
     ${getControlsHtml(i18n)}
   </div>
+  <div class="custom-tooltip" id="customTooltip"></div>
   <script nonce="${nonce}">${getSharedScript(i18n)}</script>
 </body>
 </html>`;

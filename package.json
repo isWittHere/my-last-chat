@@ -2,7 +2,7 @@
   "name": "my-last-chat",
   "displayName": "My Last Chat",
   "description": "%extension.description%",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "l10n": "./l10n",
   "icon": "res/my-last-chat.png",
@@ -25,7 +25,9 @@
     "history",
     "summary"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onWebviewPanel:myLastChat.chatListPanel"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {

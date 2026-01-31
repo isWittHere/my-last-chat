@@ -15,21 +15,17 @@ export class ChatListPanel {
   private _disposables: vscode.Disposable[] = [];
 
   public static createOrShow(extensionUri: vscode.Uri, storageService: ChatStorageService) {
-    const column = vscode.window.activeTextEditor
-      ? vscode.window.activeTextEditor.viewColumn
-      : undefined;
-
-    // 如果已有面板，显示它
+    // 如果已有面板，在当前活动的编辑器组中显示它
     if (ChatListPanel.currentPanel) {
-      ChatListPanel.currentPanel._panel.reveal(column);
+      ChatListPanel.currentPanel._panel.reveal(vscode.ViewColumn.Active);
       return;
     }
 
-    // 创建新面板
+    // 创建新面板 - 使用 Active 确保在当前活动的编辑器组打开
     const panel = vscode.window.createWebviewPanel(
       ChatListPanel.viewType,
       'My Last Chat',
-      column || vscode.ViewColumn.One,
+      vscode.ViewColumn.Active,
       {
         enableScripts: true,
         localResourceRoots: [extensionUri],
@@ -38,6 +34,19 @@ export class ChatListPanel {
     );
 
     // 设置面板图标（支持浅色/深色主题）
+    panel.iconPath = {
+      light: vscode.Uri.joinPath(extensionUri, 'res', 'my-last-chat-light.svg'),
+      dark: vscode.Uri.joinPath(extensionUri, 'res', 'my-last-chat-dark.svg')
+    };
+
+    ChatListPanel.currentPanel = new ChatListPanel(panel, extensionUri, storageService);
+  }
+
+  /**
+   * 从已存在的面板恢复（用于反序列化）
+   */
+  public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, storageService: ChatStorageService) {
+    // 设置面板图标
     panel.iconPath = {
       light: vscode.Uri.joinPath(extensionUri, 'res', 'my-last-chat-light.svg'),
       dark: vscode.Uri.joinPath(extensionUri, 'res', 'my-last-chat-dark.svg')
@@ -167,6 +176,10 @@ export class ChatListPanel {
       case 'attachToChat':
         await vscode.commands.executeCommand('workbench.action.chat.attachFile', vscode.Uri.file(data.filePath));
         break;
+      case 'createInFolder':
+        await this._storageService.createNewSummaryInFolder(data.folderPath);
+        await this._refresh();
+        break;
     }
   }
 
@@ -280,6 +293,8 @@ export class ChatListPanel {
       favorite: s.metadata.favorite || false,
       tags: s.metadata.tags || [],
       scope: (s as any).scope || 'workspace',
+      folderName: s.folderName || undefined,
+      folderPath: s.folderPath || undefined,
     }));
   }
 }
