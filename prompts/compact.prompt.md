@@ -1,6 +1,7 @@
 ---
 name: "compact"
 description: "Create a detailed summary of the conversation so far."
+model: Claude Haiku 4.5 (copilot)
 ---
 Your task is to create a detailed summary of the conversation so far, paying close attention to the user's explicit requests and your previous actions.
 This summary should be thorough in capturing technical details, code patterns, and architectural decisions that would be essential for continuing with the conversation and supporting any continuing tasks.
@@ -37,15 +38,15 @@ solved_lists: [Optional] List of completed tasks
 
 **Step 1: Check for Existing Summary**
 ⚠️ BEFORE creating new file, use My Last Chat query tools:
-- Use `my-last-chat/lastchats` for quick query
-- Use `my-last-chat/searchchat` (keywords: main topic, feedbackLevel: "META", scope: "all")
+- Use `#tool:my-last-chat.my-last-chat/lastchats` for quick query
+- Use `#tool:my-last-chat.my-last-chat/searchchat` (keywords: main topic, feedbackLevel: "META", scope: "all")
 - If highly related summary found → UPDATE that file
 - If no related summary found → CREATE new file
 
 **Step 2: File Location and Naming**
 - **Location**: `.myLastChat/` in workspace root (NOT in z_md)
 - **Filename**: `MLC_` + title + `.md` (keep Chinese/spaces as-is)
-  - Example: `MLC_example.md`
+  - Example: `MLC_改进紧凑提示词.md`
 - **No user consent needed** - create/update directly
 
 **Step 3: File Structure**
@@ -86,7 +87,7 @@ solved_lists: [Optional] List of completed tasks
 ```
 
 ### Key Rules:
-1. ⚠️ Always query existing summaries first using `my-last-chat.my-last-chat/searchchat` and `my-last-chat.my-last-chat/lastchats`
+1. ⚠️ Always query existing summaries first using `#tool:my-last-chat.my-last-chat/searchchat` and `#tool:my-last-chat.my-last-chat/lastchats`
 2. ⚠️ Update existing file if found; create new only if none exists
 3. ⚠️ Location: `${workspaceFolder}/.myLastChat/`
 4. ⚠️ Filename: `MLC_` + exact title + `.md` (no translation/conversion)
