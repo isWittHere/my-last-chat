@@ -22,7 +22,7 @@ My Last Chat 是一个 VS Code 扩展，用于管理和搜索您的 AI 聊天历
 
 ### 使用 Copilot 自动生成摘要
 
-本插件提供了 [`compact.prompt.md`](https://raw.githubusercontent.com/isWittHere/my-last-chat/main/compact.prompt.md) 文件，它是一个可重用的 prompt 文件。在 Copilot Chat 的 Prompt 配置中添加它，就可以在 Copilot Chat 中使用 `/compact` 命令：
+本插件提供了 [`compact.prompt.md`](https://github.com/isWittHere/my-last-chat/blob/main/prompts/compact.prompt.md) 文件，它是一个可重用的 prompt 文件。在 Copilot Chat 的 Prompt 配置中添加它，就可以在 Copilot Chat 中使用 `/compact` 命令：
 
 ```
 @workspace /compact
@@ -33,6 +33,20 @@ My Last Chat 是一个 VS Code 扩展，用于管理和搜索您的 AI 聊天历
 - 生成符合规范的 YAML frontmatter 元数据
 - 智能查重，更新已有摘要或创建新文件
 - 自动保存到 `.myLastChat/` 目录
+
+### 生成技术知识文档
+
+使用 [`knowledge_maker.prompt.md`](https://github.com/isWittHere/my-last-chat/blob/main/prompts/knowledge_maker.prompt.md) 为特定技术主题创建专注的知识文档：
+
+```
+@workspace /knowledge-gen
+```
+
+该命令将自动：
+- 为讨论的特定技术主题生成专注的知识文档
+- 记录技术决策、模式和解决方案
+- 包含实现细节和最佳实践
+- 自动保存到 `.myLastChat/` 目录，文件名以 `MLC_K_` 为前缀
 
 ## 主要功能
 
@@ -113,7 +127,9 @@ solved_lists:
 
 ## 配套 Prompt 文件
 
-### 📄 `compact.prompt.md` - 对话摘要生成器
+所有 prompt 文件都位于 [`prompts/`](https://github.com/isWittHere/my-last-chat/tree/main/prompts) 文件夹中。
+
+### 📄 [`compact.prompt.md`](https://github.com/isWittHere/my-last-chat/blob/main/prompts/compact.prompt.md) - 对话摘要生成器
 
 这是一个配套的 prompt 文件，可以在 Copilot Chat 中使用：
 
@@ -126,6 +142,21 @@ solved_lists:
 - ✅ 生成符合元数据格式的 YAML frontmatter
 - ✅ 智能查重，更新已有摘要或创建新文件
 - ✅ 自动保存到 `.myLastChat/` 目录
+
+### 📄 [`knowledge_maker.prompt.md`](https://github.com/isWittHere/my-last-chat/blob/main/prompts/knowledge_maker.prompt.md) - 技术主题知识生成器
+
+为对话中讨论的特定技术主题、功能或想法生成专注的知识文档：
+
+```
+@workspace /knowledge-gen
+```
+
+功能：
+- ✅ 为特定技术主题生成专注的知识文档
+- ✅ 记录技术决策、模式和解决方案
+- ✅ 包含实现细节和最佳实践
+- ✅ 智能查重，更新已有文档或创建新文件
+- ✅ 自动保存到 `.myLastChat/` 目录，文件名以 `MLC_K_` 为前缀
 
 ## 设置选项
 

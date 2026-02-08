@@ -22,7 +22,7 @@ When you install the My Last Chat extension, you get:
 
 ### Auto-Generate Summaries with Copilot
 
-This extension provides a [`compact.prompt.md`](https://raw.githubusercontent.com/isWittHere/my-last-chat/main/compact.prompt.md) file, which is a reusable prompt file. Add it to Copilot Chat's Prompt configuration, and you can use the `/compact` command in Copilot Chat:
+This extension provides a [`compact.prompt.md`](https://github.com/isWittHere/my-last-chat/blob/main/prompts/compact.prompt.md) file, which is a reusable prompt file. Add it to Copilot Chat's Prompt configuration, and you can use the `/compact` command in Copilot Chat:
 
 ```
 @workspace /compact
@@ -33,6 +33,20 @@ This command will automatically:
 - Generate YAML frontmatter with proper metadata format
 - Smart deduplication: update existing summaries or create new files
 - Auto-save to `.myLastChat/` directory
+
+### Generate Technical Knowledge Documentation
+
+Use [`knowledge_maker.prompt.md`](https://github.com/isWittHere/my-last-chat/blob/main/prompts/knowledge_maker.prompt.md) to create focused knowledge documentation for specific technical topics:
+
+```
+@workspace /knowledge-gen
+```
+
+This command will automatically:
+- Generate focused knowledge docs for specific technical topics discussed
+- Document technical decisions, patterns, and solutions
+- Include implementation details and best practices
+- Auto-save to `.myLastChat/` directory with `MLC_K_` prefix
 
 ## Key Features
 
@@ -111,14 +125,16 @@ solved_lists:
 Record chat content here...
 ```
 
-## Companion Prompt File
+## Companion Prompt Files
 
-### 📄 `compact.prompt.md` - Conversation Summary Generator
+All prompt files are located in the [`prompts/`](https://github.com/isWittHere/my-last-chat/tree/main/prompts) folder.
+
+### 📄 [`compact.prompt.md`](https://github.com/isWittHere/my-last-chat/blob/main/prompts/compact.prompt.md) - Conversation Summary Generator
 
 This is a companion prompt file that can be used in Copilot Chat:
 
 ```
-/compact
+@workspace /compact
 ```
 
 Features:
@@ -126,6 +142,21 @@ Features:
 - ✅ Generate YAML frontmatter with proper metadata format
 - ✅ Smart deduplication: update existing summaries or create new files
 - ✅ Auto-save to `.myLastChat/` directory
+
+### 📄 [`knowledge_maker.prompt.md`](https://github.com/isWittHere/my-last-chat/blob/main/prompts/knowledge_maker.prompt.md) - Technical Topic Knowledge Generator
+
+Generate focused knowledge documentation for specific technical topics, features, or ideas discussed in the conversation:
+
+```
+@workspace /knowledge-gen
+```
+
+Features:
+- ✅ Generate focused knowledge docs for specific technical topics
+- ✅ Document technical decisions, patterns, and solutions
+- ✅ Include implementation details and best practices
+- ✅ Smart deduplication: update existing docs or create new files
+- ✅ Auto-save to `.myLastChat/` directory with `MLC_K_` prefix
 
 ## Configuration Options
 
