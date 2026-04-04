@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import matter from 'gray-matter';
-import { ChatMetadata, ChatSummary, FeedbackLevel, SearchResult, StorageScope } from './types';
+import { ChatMetadata, ChatSummary, FeedbackLevel, SearchResult, StorageScope, SubWorkspaceInfo } from './types';
 
 /**
  * 聊天摘要存储服务
@@ -131,29 +131,185 @@ export class ChatStorageService {
 
   /**
    * 获取所有聊天摘要文件（根据 scope）
+   * scope 可以是 'workspace' | 'global' | 'all'，或者具体的子工作区路径数组
    */
-  async getAllChatSummaries(scope: StorageScope = 'all'): Promise<ChatSummary[]> {
+  async getAllChatSummaries(scope: StorageScope | string[] = 'all'): Promise<ChatSummary[]> {
     const summaries: ChatSummary[] = [];
+
+    // 如果 scope 是路径数组，按子工作区路径筛选
+    if (Array.isArray(scope)) {
+      for (const wsPath of scope) {
+        const chatPath = path.join(wsPath, '.myLastChat');
+        const wsSummaries = await this.getChatSummariesFromPath(chatPath, 'workspace');
+        const wsName = path.basename(wsPath);
+        for (const s of wsSummaries) {
+          (s as any).workspaceName = wsName;
+          (s as any).workspacePath = wsPath;
+        }
+        summaries.push(...wsSummaries);
+      }
+      return summaries;
+    }
 
     if (scope === 'workspace' || scope === 'all') {
       const workspacePath = this.getWorkspaceStoragePath();
       if (workspacePath) {
         const workspaceSummaries = await this.getChatSummariesFromPath(workspacePath, 'workspace');
+        // 标记主工作区名称
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (workspaceFolders && workspaceFolders.length > 0) {
+          const mainWsName = path.basename(workspaceFolders[0].uri.fsPath);
+          const mainWsPath = workspaceFolders[0].uri.fsPath;
+          for (const s of workspaceSummaries) {
+            (s as any).workspaceName = mainWsName;
+            (s as any).workspacePath = mainWsPath;
+          }
+        }
         summaries.push(...workspaceSummaries);
+      }
+
+      // 扫描子工作区（排除隐藏的）
+      const subWorkspaces = await this.discoverSubWorkspaces();
+      const hiddenConfig = vscode.workspace.getConfiguration('myLastChat');
+      const hiddenWorkspaces: string[] = hiddenConfig.get('hiddenWorkspaces', []);
+      
+      for (const sw of subWorkspaces) {
+        if (sw.hasChatStorage && !hiddenWorkspaces.includes(sw.path)) {
+          const swSummaries = await this.getChatSummariesFromPath(sw.chatStoragePath, 'workspace');
+          for (const s of swSummaries) {
+            (s as any).workspaceName = sw.name;
+            (s as any).workspacePath = sw.path;
+          }
+          summaries.push(...swSummaries);
+        }
       }
     }
 
     if (scope === 'global' || scope === 'all') {
-      const globalPath = this.getGlobalStoragePath();
-      // 避免重复（如果工作区路径和全局路径相同）
-      const workspacePath = this.getWorkspaceStoragePath();
-      if (globalPath !== workspacePath) {
-        const globalSummaries = await this.getChatSummariesFromPath(globalPath, 'global');
-        summaries.push(...globalSummaries);
+      const hiddenCfg = vscode.workspace.getConfiguration('myLastChat');
+      const hidden: string[] = hiddenCfg.get('hiddenWorkspaces', []);
+      
+      if (!hidden.includes('__global__')) {
+        const globalPath = this.getGlobalStoragePath();
+        // 避免重复（如果工作区路径和全局路径相同）
+        const workspacePath = this.getWorkspaceStoragePath();
+        if (globalPath !== workspacePath) {
+          const globalSummaries = await this.getChatSummariesFromPath(globalPath, 'global');
+          summaries.push(...globalSummaries);
+        }
       }
     }
 
     return summaries;
+  }
+
+  /**
+   * 发现主工作区下的子工作区（含 .git 的一级子文件夹）
+   */
+  async discoverSubWorkspaces(): Promise<SubWorkspaceInfo[]> {
+    const subWorkspaces: SubWorkspaceInfo[] = [];
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      return subWorkspaces;
+    }
+
+    const rootPath = workspaceFolders[0].uri.fsPath;
+
+    try {
+      const entries = await fs.promises.readdir(rootPath, { withFileTypes: true });
+      const subDirs = entries.filter(entry => entry.isDirectory() && !entry.name.startsWith('.'));
+
+      for (const dir of subDirs) {
+        const dirPath = path.join(rootPath, dir.name);
+        const gitPath = path.join(dirPath, '.git');
+
+        try {
+          const gitStat = await fs.promises.stat(gitPath);
+          if (gitStat.isDirectory()) {
+            const chatStoragePath = path.join(dirPath, '.myLastChat');
+            let hasChatStorage = false;
+            try {
+              const chatStat = await fs.promises.stat(chatStoragePath);
+              hasChatStorage = chatStat.isDirectory();
+            } catch {
+              // .myLastChat 不存在
+            }
+
+            subWorkspaces.push({
+              name: dir.name,
+              path: dirPath,
+              chatStoragePath,
+              hasChatStorage,
+            });
+          }
+        } catch {
+          // .git 不存在，跳过
+        }
+      }
+    } catch (error) {
+      console.error('Failed to discover sub-workspaces:', error);
+    }
+
+    return subWorkspaces;
+  }
+
+  /**
+   * 获取所有可用的工作区信息（主工作区 + 子工作区）
+   */
+  async getAvailableWorkspaces(): Promise<{ name: string; path: string; isMain: boolean }[]> {
+    const workspaces: { name: string; path: string; isMain: boolean }[] = [];
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+
+    if (workspaceFolders && workspaceFolders.length > 0) {
+      const mainPath = workspaceFolders[0].uri.fsPath;
+      const mainChatPath = path.join(mainPath, '.myLastChat');
+      let mainHasChat = false;
+      try {
+        const stat = await fs.promises.stat(mainChatPath);
+        mainHasChat = stat.isDirectory();
+      } catch { }
+
+      if (mainHasChat) {
+        workspaces.push({
+          name: path.basename(mainPath),
+          path: mainPath,
+          isMain: true,
+        });
+      }
+    }
+
+    const subWorkspaces = await this.discoverSubWorkspaces();
+    const config = vscode.workspace.getConfiguration('myLastChat');
+    const hiddenWorkspaces: string[] = config.get('hiddenWorkspaces', []);
+    
+    for (const sw of subWorkspaces) {
+      if (sw.hasChatStorage && !hiddenWorkspaces.includes(sw.path)) {
+        workspaces.push({
+          name: sw.name,
+          path: sw.path,
+          isMain: false,
+        });
+      }
+    }
+
+    return workspaces;
+  }
+
+  /**
+   * 检查 Global 是否被隐藏
+   */
+  isGlobalHidden(): boolean {
+    const config = vscode.workspace.getConfiguration('myLastChat');
+    const hidden: string[] = config.get('hiddenWorkspaces', []);
+    return hidden.includes('__global__');
+  }
+
+  /**
+   * 获取工作区图标映射
+   */
+  getWorkspaceIcons(): Record<string, string> {
+    const config = vscode.workspace.getConfiguration('myLastChat');
+    return config.get('workspaceIcons', {});
   }
 
   /**

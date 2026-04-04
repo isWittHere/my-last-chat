@@ -19,6 +19,10 @@ export interface WebviewDataItem {
   folderName?: string;
   /** 所属文件夹路径（仅子文件夹内的文件有此字段） */
   folderPath?: string;
+  /** 所属子工作区名称 */
+  workspaceName?: string;
+  /** 所属子工作区路径 */
+  workspacePath?: string;
 }
 
 /**
@@ -187,7 +191,7 @@ export function getSharedStyles(isPanel: boolean = false): string {
     }
     .custom-select-btn {
       width: 100%;
-      padding: 4px 8px;
+      padding: 2px 8px;
       background: var(--vscode-dropdown-background);
       color: var(--vscode-descriptionForeground);
       border: 1px solid var(--vscode-dropdown-border, rgba(128,128,128,0.35));
@@ -199,6 +203,8 @@ export function getSharedStyles(isPanel: boolean = false): string {
       align-items: center;
       transition: all 0.15s;
       text-align: left;
+      height: 24px;
+      box-sizing: border-box;
     }
     .custom-select-btn .select-text { flex: 1; }
     .custom-select-btn .codicon {
@@ -255,16 +261,72 @@ export function getSharedStyles(isPanel: boolean = false): string {
       font-size: 11px;
       color: var(--vscode-descriptionForeground);
       cursor: pointer;
-      padding: 4px 8px;
+      padding: 2px 8px;
       border-radius: 4px;
       white-space: nowrap;
       flex-shrink: 0;
       border: 1px solid var(--vscode-dropdown-border, rgba(128,128,128,0.35));
       transition: all 0.15s;
+      height: 24px;
+      box-sizing: border-box;
     }
     .fav-filter:hover { background: var(--vscode-list-hoverBackground); }
     .fav-filter .codicon { font-size: 12px; color: var(--vscode-descriptionForeground); }
     .fav-filter input:checked + .codicon { color: #f59e0b; }
+    
+    /* Tab 筛选行 */
+    .filter-tabs {
+      display: flex;
+      gap: 3px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+      padding-bottom: 2px;
+    }
+    .filter-tab {
+      padding: 1px 8px;
+      font-size: 11px;
+      font-family: var(--vscode-font-family);
+      border: 1px solid rgba(128,128,128,0.2);
+      border-radius: 3px;
+      background: transparent;
+      color: var(--vscode-descriptionForeground);
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s;
+      user-select: none;
+      height: 20px;
+      line-height: 16px;
+      box-sizing: border-box;
+    }
+    .filter-tab:hover {
+      background: var(--vscode-list-hoverBackground);
+      border-color: rgba(128,128,128,0.4);
+    }
+    .filter-tab.active {
+      background: var(--vscode-list-activeSelectionBackground, rgba(128,128,128,0.15));
+      color: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground));
+      border-color: rgba(128,128,128,0.35);
+      font-weight: 500;
+    }
+    .filter-tab .codicon {
+      font-size: 12px;
+      vertical-align: -1px;
+      margin-right: 3px;
+    }
+    .filter-tab .codicon.codicon-code { color: #64d8ff; }
+    .filter-tab .codicon.codicon-bug { color: #ff6b68; }
+    .filter-tab .codicon.codicon-checklist { color: #7fcd85; }
+    .filter-tab .codicon.codicon-file-text { color: #c77dd1; }
+    .filter-tab .codicon.codicon-book { color: #ffcc80; }
+    body[data-vscode-theme-kind="vscode-light"] .filter-tab .codicon.codicon-code { color: #0079dc; }
+    body[data-vscode-theme-kind="vscode-light"] .filter-tab .codicon.codicon-bug { color: #d32f2f; }
+    body[data-vscode-theme-kind="vscode-light"] .filter-tab .codicon.codicon-checklist { color: #009207; }
+    body[data-vscode-theme-kind="vscode-light"] .filter-tab .codicon.codicon-file-text { color: #8e24aa; }
+    body[data-vscode-theme-kind="vscode-light"] .filter-tab .codicon.codicon-book { color: #d77600; }
+    .filter-tab-label {
+      display: none;
+    }
     
     /* 列表 - 隐藏原生滚动条 */
     .chat-list { 
@@ -674,13 +736,15 @@ export function getSharedStyles(isPanel: boolean = false): string {
       border: 1px solid var(--vscode-dropdown-border, rgba(128,128,128,0.35));
       color: var(--vscode-descriptionForeground);
       cursor: pointer;
-      padding: 4px 8px;
+      padding: 2px 8px;
       border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.15s;
       flex-shrink: 0;
+      height: 24px;
+      box-sizing: border-box;
     }
     .view-toggle-btn:hover {
       background: var(--vscode-list-hoverBackground);
@@ -780,32 +844,8 @@ export function getControlsHtml(i18n: WebviewI18n): string {
         <input type="text" class="search-input" id="searchInput" placeholder="${i18n.search}">
       </div>
       
+      <!-- 第1行：排序 + 收藏 + 视图切换 -->
       <div class="controls-row">
-        <div class="custom-select" id="filterSelect" data-value="all">
-          <button class="custom-select-btn">
-            <span class="select-text">${i18n.allTypes}</span>
-            <span class="codicon codicon-chevron-down"></span>
-          </button>
-          <div class="custom-select-dropdown">
-            <div class="custom-select-option selected" data-value="all">${i18n.allTypes}</div>
-            <div class="custom-select-option" data-value="coding">Coding</div>
-            <div class="custom-select-option" data-value="debug">Debug</div>
-            <div class="custom-select-option" data-value="planning">Planning</div>
-            <div class="custom-select-option" data-value="spec">Spec</div>
-            <div class="custom-select-option" data-value="knowledge">Knowledge</div>
-          </div>
-        </div>
-        <div class="custom-select" id="scopeSelect" data-value="workspace">
-          <button class="custom-select-btn">
-            <span class="select-text">${i18n.workspaceOnly}</span>
-            <span class="codicon codicon-chevron-down"></span>
-          </button>
-          <div class="custom-select-dropdown">
-            <div class="custom-select-option" data-value="all">${i18n.allScopes}</div>
-            <div class="custom-select-option selected" data-value="workspace">${i18n.workspaceOnly}</div>
-            <div class="custom-select-option" data-value="global">${i18n.globalOnly}</div>
-          </div>
-        </div>
         <div class="custom-select" id="sortSelect" data-value="updated-desc">
           <button class="custom-select-btn">
             <span class="select-text">${i18n.recentlyUpdated}</span>
@@ -827,6 +867,20 @@ export function getControlsHtml(i18n: WebviewI18n): string {
         <button class="view-toggle-btn" id="viewToggle" data-view="detailed" data-tooltip="${i18n.compactView}">
           <span class="codicon codicon-list-flat"></span>
         </button>
+      </div>
+      
+      <!-- 第2行：类型筛选 Tabs -->
+      <div class="filter-tabs" id="typeTabs">
+        <button class="filter-tab active" data-value="all">${i18n.allTypes}</button>
+        <button class="filter-tab" data-value="coding"><span class="codicon codicon-code"></span> Coding</button>
+        <button class="filter-tab" data-value="debug"><span class="codicon codicon-bug"></span> Debug</button>
+        <button class="filter-tab" data-value="planning"><span class="codicon codicon-checklist"></span> Planning</button>
+        <button class="filter-tab" data-value="spec"><span class="codicon codicon-file-text"></span> Spec</button>
+        <button class="filter-tab" data-value="knowledge"><span class="codicon codicon-book"></span> Knowledge</button>
+      </div>
+      
+      <!-- 第3行：工作区筛选 Tabs（由后端动态填充） -->
+      <div class="filter-tabs" id="workspaceTabs">
       </div>
     </div>
     
@@ -854,8 +908,8 @@ export function getSharedScript(i18n: WebviewI18n): string {
     const i18n = ${i18nJson};
     
     const searchInput = $('searchInput');
-    const filterSelect = $('filterSelect');
-    const scopeSelect = $('scopeSelect');
+    const typeTabs = $('typeTabs');
+    const workspaceTabs = $('workspaceTabs');
     const sortSelect = $('sortSelect');
     const favOnly = $('favOnly');
     const chatList = $('chatList');
@@ -866,6 +920,14 @@ export function getSharedScript(i18n: WebviewI18n): string {
     let collapsed = new Set();
     let tooltipTimer;
     let currentViewMode = 'detailed'; // 'detailed' | 'compact'
+    
+    // Tab 筛选状态
+    let selectedTypes = new Set(['all']); // 当前选中的类型
+    let selectedWorkspaces = new Set(['workspace']); // 当前选中的工作区
+    let mainWorkspacePath = null; // 主工作区路径，由 updateWorkspaces 填充
+    let dblClickTimer = null; // 双击检测
+    let lastClickValue = null;
+    let lastClickGroup = null;
     
     // 自定义工具提示逻辑
     function initTooltip() {
@@ -910,7 +972,7 @@ export function getSharedScript(i18n: WebviewI18n): string {
     }
     initTooltip();
     
-    // 自定义下拉选单初始化
+    // 自定义下拉选单初始化（仅排序下拉保留）
     function initCustomSelects() {
       document.querySelectorAll('.custom-select').forEach(select => {
         const btn = select.querySelector('.custom-select-btn');
@@ -946,6 +1008,95 @@ export function getSharedScript(i18n: WebviewI18n): string {
       });
     }
     initCustomSelects();
+    
+    // Tab 筛选逻辑初始化
+    function initFilterTabs() {
+      // 处理类型 Tab 和工作区 Tab 的点击/双击
+      function handleTabClick(container, selectedSet, value) {
+        if (dblClickTimer && lastClickValue === value && lastClickGroup === container) {
+          // 双击：独占选中
+          clearTimeout(dblClickTimer);
+          dblClickTimer = null;
+          lastClickValue = null;
+          lastClickGroup = null;
+          selectedSet.clear();
+          selectedSet.add(value);
+          updateTabUI(container, selectedSet);
+          doSearch();
+        } else {
+          // 单击等待双击
+          if (dblClickTimer) {
+            clearTimeout(dblClickTimer);
+          }
+          lastClickValue = value;
+          lastClickGroup = container;
+          dblClickTimer = setTimeout(() => {
+            dblClickTimer = null;
+            lastClickValue = null;
+            lastClickGroup = null;
+            
+            // 单击逻辑：多选切换
+            if (value === 'all') {
+              // 类型的 All 清除所有选中
+              selectedSet.clear();
+              selectedSet.add('all');
+            } else {
+              // 切换选中状态
+              selectedSet.delete('all');
+              if (selectedSet.has(value)) {
+                selectedSet.delete(value);
+              } else {
+                selectedSet.add(value);
+              }
+              // 如果没有任何选中，回到默认
+              if (selectedSet.size === 0) {
+                if (container === workspaceTabs && mainWorkspacePath) {
+                  selectedSet.add(mainWorkspacePath);
+                } else {
+                  selectedSet.add('all');
+                }
+              }
+            }
+            updateTabUI(container, selectedSet);
+            doSearch();
+          }, 250);
+        }
+      }
+      
+      function updateTabUI(container, selectedSet) {
+        container.querySelectorAll('.filter-tab').forEach(tab => {
+          if (selectedSet.has(tab.dataset.value)) {
+            tab.classList.add('active');
+          } else {
+            tab.classList.remove('active');
+          }
+        });
+      }
+      
+      // 绑定类型 Tabs 事件
+      typeTabs.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', e => {
+          e.stopPropagation();
+          handleTabClick(typeTabs, selectedTypes, tab.dataset.value);
+        });
+      });
+      
+      // 绑定工作区 Tabs 事件
+      function bindWorkspaceTabs() {
+        workspaceTabs.querySelectorAll('.filter-tab').forEach(tab => {
+          tab.addEventListener('click', e => {
+            e.stopPropagation();
+            handleTabClick(workspaceTabs, selectedWorkspaces, tab.dataset.value);
+          });
+        });
+      }
+      bindWorkspaceTabs();
+      
+      // 暴露给外部用于动态更新工作区 tabs 后重新绑定
+      window._bindWorkspaceTabs = bindWorkspaceTabs;
+      window._updateTabUI = updateTabUI;
+    }
+    initFilterTabs();
     
     // 自定义滚动条实现
     (function initCustomScrollbar() {
@@ -1139,8 +1290,8 @@ export function getSharedScript(i18n: WebviewI18n): string {
     function saveFilterState() {
       const state = {
         query: searchInput.value,
-        filter: filterSelect.dataset.value,
-        scope: scopeSelect.dataset.value,
+        filter: Array.from(selectedTypes),
+        scope: Array.from(selectedWorkspaces),
         showFavoritesOnly: favOnly.checked,
         sortBy: sortSelect.dataset.value,
         viewMode: currentViewMode
@@ -1154,26 +1305,14 @@ export function getSharedScript(i18n: WebviewI18n): string {
       if (state) {
         searchInput.value = state.query || '';
         
-        if (state.filter) {
-          filterSelect.dataset.value = state.filter;
-          const filterText = filterSelect.querySelector('.select-text');
-          const filterOpt = filterSelect.querySelector('[data-value="' + state.filter + '"]');
-          if (filterOpt && filterText) {
-            filterText.textContent = filterOpt.textContent;
-            filterSelect.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
-            filterOpt.classList.add('selected');
-          }
+        if (state.filter && Array.isArray(state.filter)) {
+          selectedTypes = new Set(state.filter);
+          window._updateTabUI(typeTabs, selectedTypes);
         }
         
-        if (state.scope) {
-          scopeSelect.dataset.value = state.scope;
-          const scopeText = scopeSelect.querySelector('.select-text');
-          const scopeOpt = scopeSelect.querySelector('[data-value="' + state.scope + '"]');
-          if (scopeOpt && scopeText) {
-            scopeText.textContent = scopeOpt.textContent;
-            scopeSelect.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
-            scopeOpt.classList.add('selected');
-          }
+        if (state.scope && Array.isArray(state.scope)) {
+          selectedWorkspaces = new Set(state.scope);
+          window._updateTabUI(workspaceTabs, selectedWorkspaces);
         }
         
         if (state.sortBy) {
@@ -1204,8 +1343,8 @@ export function getSharedScript(i18n: WebviewI18n): string {
       vscode.postMessage({
         type: 'search',
         query: searchInput.value,
-        filter: filterSelect.dataset.value,
-        scope: scopeSelect.dataset.value,
+        filter: Array.from(selectedTypes),
+        scope: Array.from(selectedWorkspaces),
         showFavoritesOnly: favOnly.checked,
         sortBy: sortSelect.dataset.value
       });
@@ -1262,17 +1401,50 @@ export function getSharedScript(i18n: WebviewI18n): string {
           if (controlsArea) controlsArea.classList.remove('hidden');
         }
       }
-      if (e.data.type === 'updateScope') {
-        // 更新范围选择器
-        const newScope = e.data.scope;
-        scopeSelect.dataset.value = newScope;
-        const scopeText = scopeSelect.querySelector('.select-text');
-        const scopeOpt = scopeSelect.querySelector('[data-value="' + newScope + '"]');
-        if (scopeOpt && scopeText) {
-          scopeText.textContent = scopeOpt.textContent;
-          scopeSelect.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
-          scopeOpt.classList.add('selected');
+      if (e.data.type === 'updateWorkspaces') {
+        // 动态更新工作区 Tabs
+        const workspaces = e.data.workspaces || [];
+        const showGlobal = e.data.showGlobal !== false;
+        
+        // 找到主工作区路径
+        const mainWs = workspaces.find(ws => ws.isMain);
+        if (mainWs) {
+          mainWorkspacePath = mainWs.path;
         }
+        
+        // 初始化时如果是 'workspace' 或 'all' 默认值，替换为主工作区路径
+        if (mainWorkspacePath && (selectedWorkspaces.has('workspace') || selectedWorkspaces.has('all'))) {
+          selectedWorkspaces.delete('workspace');
+          selectedWorkspaces.delete('all');
+          selectedWorkspaces.add(mainWorkspacePath);
+        }
+        
+        let html = '';
+        
+        // 添加动态工作区 tabs
+        const wsIcons = e.data.workspaceIcons || {};
+        workspaces.forEach(ws => {
+          const value = ws.path;
+          const isActive = selectedWorkspaces.has(value);
+          const label = ws.name;
+          const iconName = wsIcons[ws.path];
+          const icon = iconName ? '<span class="codicon codicon-' + esc(iconName) + '"></span> ' : '';
+          html += '<button class="filter-tab' + (isActive ? ' active' : '') + '" data-value="' + esc(value) + '" data-tooltip="' + esc(ws.path) + '">' + icon + esc(label) + '</button>';
+        });
+        
+        if (showGlobal) {
+          html += '<button class="filter-tab' + (selectedWorkspaces.has('global') ? ' active' : '') + '" data-value="global">' + i18n.globalOnly + '</button>';
+        }
+        
+        workspaceTabs.innerHTML = html;
+        window._bindWorkspaceTabs();
+      }
+      if (e.data.type === 'updateScope') {
+        // 兼容旧协议：更新范围
+        const newScope = e.data.scope;
+        selectedWorkspaces.clear();
+        selectedWorkspaces.add(newScope);
+        window._updateTabUI(workspaceTabs, selectedWorkspaces);
         saveFilterState();
       }
     });
@@ -1623,8 +1795,8 @@ export function getSharedScript(i18n: WebviewI18n): string {
     // 发送 ready 消息，包含当前的筛选器状态
     vscode.postMessage({ 
       type: 'ready',
-      filter: filterSelect.dataset.value,
-      scope: scopeSelect.dataset.value,
+      filter: Array.from(selectedTypes),
+      scope: Array.from(selectedWorkspaces),
       showFavoritesOnly: favOnly.checked,
       sortBy: sortSelect.dataset.value
     });

@@ -25,6 +25,20 @@ export interface ChatMetadata {
 }
 
 /**
+ * 子工作区信息（含 .git 的子文件夹）
+ */
+export interface SubWorkspaceInfo {
+  /** 子工作区名称（文件夹名） */
+  name: string;
+  /** 子工作区完整路径 */
+  path: string;
+  /** .myLastChat 文件夹路径 */
+  chatStoragePath: string;
+  /** 是否存在 .myLastChat 文件夹 */
+  hasChatStorage: boolean;
+}
+
+/**
  * 反馈详细程度
  */
 export type FeedbackLevel = 'TITLE_ONLY' | 'DESCRIPTION' | 'META' | 'ALL';
@@ -52,6 +66,10 @@ export interface ChatSummary {
   folderName?: string;
   /** 所属文件夹路径（仅子文件夹内的文件有此字段） */
   folderPath?: string;
+  /** 所属子工作区名称 */
+  workspaceName?: string;
+  /** 所属子工作区路径 */
+  workspacePath?: string;
 }
 
 /**
@@ -85,6 +103,10 @@ export interface SearchResult {
   folderName?: string;
   /** 所属文件夹路径（仅子文件夹内的文件有此字段） */
   folderPath?: string;
+  /** 所属子工作区名称 */
+  workspaceName?: string;
+  /** 所属子工作区路径 */
+  workspacePath?: string;
 }
 
 /**

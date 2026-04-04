@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { ChatStorageService } from './storage';
 import { ChatListViewProvider, ChatListPanel } from './webview';
 import { registerTools } from './tools';
@@ -97,6 +98,152 @@ export function activate(context: vscode.ExtensionContext) {
         }
       } else {
         vscode.window.showErrorMessage(vscode.l10n.t('Failed to create chat summary'));
+      }
+    })
+  );
+
+  // 注册管理子工作区命令
+  context.subscriptions.push(
+    vscode.commands.registerCommand('myLastChat.manageWorkspaces', async () => {
+      const allSubWorkspaces = await storageService.discoverSubWorkspaces();
+
+      // 读取当前隐藏列表
+      const config = vscode.workspace.getConfiguration('myLastChat');
+      const hiddenWorkspaces: string[] = config.get('hiddenWorkspaces', []);
+
+      const items: vscode.QuickPickItem[] = [];
+
+      // 添加子工作区项
+      for (const sw of allSubWorkspaces) {
+        items.push({
+          label: sw.name,
+          description: sw.path,
+          detail: sw.hasChatStorage ? vscode.l10n.t('Has .myLastChat folder') : vscode.l10n.t('No .myLastChat folder'),
+          picked: !hiddenWorkspaces.includes(sw.path),
+        });
+      }
+
+      // 添加全局存储项
+      const globalStoragePath = storageService.getGlobalStoragePath();
+      items.push({
+        label: vscode.l10n.t('Global Storage'),
+        description: globalStoragePath,
+        detail: vscode.l10n.t('Global chat summaries storage'),
+        picked: !hiddenWorkspaces.includes('__global__'),
+      });
+
+      if (items.length === 0) {
+        vscode.window.showInformationMessage(vscode.l10n.t('No sub-workspaces found (folders with .git)'));
+        return;
+      }
+
+      const selected = await vscode.window.showQuickPick(items, {
+        canPickMany: true,
+        title: vscode.l10n.t('Select visible scopes'),
+        placeHolder: vscode.l10n.t('Check the workspaces you want to display'),
+      });
+
+      if (selected !== undefined) {
+        const selectedDescs = new Set(selected.map(s => s.description!));
+        const newHidden: string[] = [];
+        
+        for (const sw of allSubWorkspaces) {
+          if (!selectedDescs.has(sw.path)) {
+            newHidden.push(sw.path);
+          }
+        }
+        
+        // 检查全局存储是否被选中
+        if (!selectedDescs.has(globalStoragePath)) {
+          newHidden.push('__global__');
+        }
+        
+        await config.update('hiddenWorkspaces', newHidden, vscode.ConfigurationTarget.Workspace);
+        await chatListProvider.refresh();
+        if (ChatListPanel.currentPanel) {
+          ChatListPanel.currentPanel.refresh();
+        }
+
+        // 询问是否设置工作区图标
+        const iconPresets = [
+          { label: '$(close) ' + vscode.l10n.t('No icon'), value: '' },
+          { label: '$(home) home', value: 'home' },
+          { label: '$(folder) folder', value: 'folder' },
+          { label: '$(repo) repo', value: 'repo' },
+          { label: '$(project) project', value: 'project' },
+          { label: '$(database) database', value: 'database' },
+          { label: '$(cloud) cloud', value: 'cloud' },
+          { label: '$(globe) globe', value: 'globe' },
+          { label: '$(server) server', value: 'server' },
+          { label: '$(tools) tools', value: 'tools' },
+          { label: '$(beaker) beaker', value: 'beaker' },
+          { label: '$(heart) heart', value: 'heart' },
+          { label: '$(star-full) star', value: 'star-full' },
+          { label: '$(zap) zap', value: 'zap' },
+          { label: '$(flame) flame', value: 'flame' },
+          { label: '$(rocket) rocket', value: 'rocket' },
+          { label: '$(compass) compass', value: 'compass' },
+          { label: '$(package) package', value: 'package' },
+          { label: '$(archive) archive', value: 'archive' },
+          { label: '$(bookmark) bookmark', value: 'bookmark' },
+          { label: '$(tag) tag', value: 'tag' },
+          { label: '$(terminal) terminal', value: 'terminal' },
+          { label: '$(lightbulb) lightbulb', value: 'lightbulb' },
+          { label: '$(shield) shield', value: 'shield' },
+        ];
+
+        // 构建可设置图标的工作区列表（可见的）
+        const visibleWorkspaces: { label: string; path: string }[] = [];
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (workspaceFolders && workspaceFolders.length > 0) {
+          const mainPath = workspaceFolders[0].uri.fsPath;
+          visibleWorkspaces.push({ label: path.basename(mainPath), path: mainPath });
+        }
+        for (const sw of allSubWorkspaces) {
+          if (!newHidden.includes(sw.path)) {
+            visibleWorkspaces.push({ label: sw.name, path: sw.path });
+          }
+        }
+
+        if (visibleWorkspaces.length > 0) {
+          const workspaceIcons: Record<string, string> = config.get('workspaceIcons', {});
+          const wsToSet = await vscode.window.showQuickPick(
+            visibleWorkspaces.map(ws => {
+              const currentIcon = workspaceIcons[ws.path];
+              return {
+                label: (currentIcon ? `$(${currentIcon}) ` : '') + ws.label,
+                description: currentIcon ? currentIcon : vscode.l10n.t('No icon'),
+                detail: ws.path,
+              };
+            }),
+            {
+              title: vscode.l10n.t('Set Workspace Icon'),
+              placeHolder: vscode.l10n.t('Select a workspace to set its icon (Esc to skip)'),
+            }
+          );
+
+          if (wsToSet) {
+            const wsPath = wsToSet.detail!;
+            const iconChoice = await vscode.window.showQuickPick(iconPresets, {
+              title: vscode.l10n.t('Choose Icon for {0}', wsToSet.label.replace(/^\$\([^)]+\)\s*/, '')),
+              placeHolder: vscode.l10n.t('Select an icon'),
+            });
+
+            if (iconChoice) {
+              const updatedIcons = { ...workspaceIcons };
+              if (iconChoice.value) {
+                updatedIcons[wsPath] = iconChoice.value;
+              } else {
+                delete updatedIcons[wsPath];
+              }
+              await config.update('workspaceIcons', updatedIcons, vscode.ConfigurationTarget.Workspace);
+              await chatListProvider.refresh();
+              if (ChatListPanel.currentPanel) {
+                ChatListPanel.currentPanel.refresh();
+              }
+            }
+          }
+        }
       }
     })
   );

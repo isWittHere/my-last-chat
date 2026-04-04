@@ -65,10 +65,19 @@ All chat summaries are stored as Markdown files in the `.myLastChat` folder, eac
 - Insert relevant summaries into current conversations anytime to provide project knowledge or progress
 - Build a searchable, reusable project knowledge base
 
+### 🏗️ Multi-Workspace Support
+
+My Last Chat automatically discovers sub-workspaces inside your current workspace:
+
+- Scans all sub-folders containing a `.git` directory
+- Reads each sub-workspace's `.myLastChat` folder alongside your main workspace
+- Perfect for **monorepo** setups — browse chat history across all projects in one place
+
 ### 🔍 Search and Filtering
 
 - **Search by title** - Quickly find relevant summaries
-- **Metadata filtering** - Filter by project, type, scope
+- **Workspace filter tabs** - One tab per workspace; single-click to toggle, **double-click to exclusively show that workspace**
+- **Type filter tabs** - Filter by type (Coding, Debug, Planning, Spec, Knowledge, Note) with a single click
 - **Favorites** - Mark important summaries
 - **Time grouping** - Group by Today, Yesterday, Last Week, Earlier
 
@@ -76,6 +85,7 @@ All chat summaries are stored as Markdown files in the `.myLastChat` folder, eac
 
 - **Sidebar View** - Quick browse summaries in the sidebar
 - **Editor Panel** - Open the full summary list in the editor
+- **Manage Workspaces** - Show/hide workspace tabs and assign custom icons via the toolbar button
 
 ### 🤖 Copilot Tool Integration
 
@@ -165,6 +175,8 @@ Open VS Code Settings (Ctrl+,) and search for "My Last Chat":
 - **Storage Location** - Choose workspace or global storage
 - **Global Storage Path** - Customize global storage directory
 - **Auto Hide Controls** - Automatically hide search bar when scrolling
+- **Hidden Workspaces** - List of workspace paths hidden from the filter tabs
+- **Workspace Icons** - Map workspace paths to custom codicon icon names
 
 ## Privacy and Data
 
