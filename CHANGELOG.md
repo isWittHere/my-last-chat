@@ -4,6 +4,12 @@
 [MyLastChat](https://github.com/isWittHere/my-last-chat) is a open-source project.
 If you encounter any problems or have feature suggestions, welcome to submit them in [GitHub Issues](https://github.com/isWittHere/my-last-chat/issues).
 
+## [0.2.1] - 2026-04-05
+
+### 🐛 Bug Fixes
+
+- **Fixed config write error**: `hiddenWorkspaces` and `workspaceIcons` settings now use `ConfigurationTarget.Global` instead of `ConfigurationTarget.Workspace`, resolving the *"configuration not registered, cannot write to workspace settings"* error when no workspace folder is open
+
 ## [0.2.0] - 2026-04-05
 
 ### ✨ New Features

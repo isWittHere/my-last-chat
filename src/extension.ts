@@ -158,7 +158,7 @@ export function activate(context: vscode.ExtensionContext) {
           newHidden.push('__global__');
         }
         
-        await config.update('hiddenWorkspaces', newHidden, vscode.ConfigurationTarget.Workspace);
+        await config.update('hiddenWorkspaces', newHidden, vscode.ConfigurationTarget.Global);
         await chatListProvider.refresh();
         if (ChatListPanel.currentPanel) {
           ChatListPanel.currentPanel.refresh();
@@ -236,7 +236,7 @@ export function activate(context: vscode.ExtensionContext) {
               } else {
                 delete updatedIcons[wsPath];
               }
-              await config.update('workspaceIcons', updatedIcons, vscode.ConfigurationTarget.Workspace);
+              await config.update('workspaceIcons', updatedIcons, vscode.ConfigurationTarget.Global);
               await chatListProvider.refresh();
               if (ChatListPanel.currentPanel) {
                 ChatListPanel.currentPanel.refresh();
