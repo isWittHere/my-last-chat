@@ -3,6 +3,23 @@
 ## Feedback and Issues
 [MyLastChat](https://github.com/isWittHere/my-last-chat) is a open-source project.
 If you encounter any problems or have feature suggestions, welcome to submit them in [GitHub Issues](https://github.com/isWittHere/my-last-chat/issues).
+
+## [0.2.0] - 2026-04-05
+
+### ✨ New Features
+
+- **Multi-workspace auto-discovery**: Automatically scans sub-folders containing `.git` under the current workspace and reads their `.myLastChat` directories, enabling cross-repository chat history browsing in monorepo environments
+- **Workspace filter tabs**: The workspace filter is now a dedicated tab row — single-click to toggle a workspace on/off, double-click to exclusively show only that workspace
+- **Type filter tabs**: The type/scope filter dropdowns are replaced with compact tab rows for faster switching
+- **Manage Workspaces command**: New command (toolbar button) to show or hide individual workspace tabs and assign custom codicon icons to each workspace
+- **Global scope control**: The Global tab can be independently shown or hidden via the Manage Workspaces command
+
+### 🎨 UI/UX Improvements
+
+- Controls row moved to the top for quicker access to sort, favorites toggle, and view-mode switch
+- Tab rows use a subtle dashed/solid border style that matches the VS Code theme
+- Each workspace tab displays a customizable codicon icon
+
 ## [0.1.3] - 2026-01-31
 
 ### 🐛 Bug Fixes

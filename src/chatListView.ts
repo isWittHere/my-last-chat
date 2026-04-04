@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ChatStorageService } from './storage';
+import { ChatSummary } from './types';
 import { generateWebviewHtml, WebviewDataItem } from './webviewTemplate';
 
 /**
@@ -69,25 +70,22 @@ export class ChatListViewProvider implements vscode.WebviewViewProvider {
         break;
       case 'ready':
         // 使用 webview 传递的筛选参数
-        const scope = data.scope || 'workspace';
-        const filter = data.filter || 'all';
+        const scope = data.scope || ['all'];
+        const filter = data.filter || ['all'];
         const sortBy = data.sortBy || 'updated-desc';
         const showFavoritesOnly = data.showFavoritesOnly || false;
         
-        // 检查工作区是否有数据
-        const workspaceSummaries = await this._storageService.getAllChatSummaries('workspace');
-        const actualScope = (scope === 'workspace' && workspaceSummaries.length === 0) ? 'all' : scope;
-        
-        // 如果需要回退到全部范围，通知 webview 更新 UI
-        if (actualScope !== scope) {
-          this._view?.webview.postMessage({
-            type: 'updateScope',
-            scope: actualScope
-          });
-        }
+        // 发送可用工作区列表
+        const workspaces = await this._storageService.getAvailableWorkspaces();
+        this._view?.webview.postMessage({
+          type: 'updateWorkspaces',
+          workspaces: workspaces,
+          showGlobal: !this._storageService.isGlobalHidden(),
+          workspaceIcons: this._storageService.getWorkspaceIcons()
+        });
         
         // 使用确定的范围进行搜索
-        await this._search('', filter, showFavoritesOnly, sortBy, actualScope);
+        await this._search('', filter, showFavoritesOnly, sortBy, scope);
         
         // 发送设置给 webview
         this._sendSettings();
@@ -127,6 +125,14 @@ export class ChatListViewProvider implements vscode.WebviewViewProvider {
    */
   public async refresh(): Promise<void> {
     if (this._view) {
+      // 重新发送工作区列表
+      const workspaces = await this._storageService.getAvailableWorkspaces();
+      this._view.webview.postMessage({
+        type: 'updateWorkspaces',
+        workspaces: workspaces,
+        showGlobal: !this._storageService.isGlobalHidden(),
+        workspaceIcons: this._storageService.getWorkspaceIcons()
+      });
       // 通知 webview 使用当前筛选状态重新搜索
       this._view.webview.postMessage({
         type: 'triggerSearch'
@@ -139,16 +145,51 @@ export class ChatListViewProvider implements vscode.WebviewViewProvider {
    */
   private async _search(
     query: string,
-    filter: string,
+    filter: string | string[],
     showFavoritesOnly: boolean = false,
     sortBy: string = 'updated-desc',
-    scope: string = 'all'
+    scope: string | string[] = 'all'
   ): Promise<void> {
     if (!this._view) {
       return;
     }
 
-    let summaries = await this._storageService.getAllChatSummaries(scope as 'workspace' | 'global' | 'all');
+    // 解析 scope：支持数组或字符串
+    let summaries: ChatSummary[] | undefined;
+    const scopeArr = Array.isArray(scope) ? scope : [scope];
+    
+    if (scopeArr.includes('all')) {
+      summaries = await this._storageService.getAllChatSummaries('all');
+    } else {
+      // 收集所有选中的工作区路径和特殊范围
+      const workspacePaths: string[] = [];
+      let includeGlobal = false;
+      
+      for (const s of scopeArr) {
+        if (s === 'global') {
+          includeGlobal = true;
+        } else if (s === 'workspace') {
+          summaries = await this._storageService.getAllChatSummaries('workspace');
+        } else {
+          // 具体的工作区路径
+          workspacePaths.push(s);
+        }
+      }
+      
+      if (workspacePaths.length > 0) {
+        const pathSummaries = await this._storageService.getAllChatSummaries(workspacePaths);
+        summaries = summaries ? [...summaries, ...pathSummaries] : pathSummaries;
+      }
+      
+      if (includeGlobal) {
+        const globalSummaries = await this._storageService.getAllChatSummaries('global');
+        summaries = summaries ? [...summaries, ...globalSummaries] : globalSummaries;
+      }
+      
+      if (!summaries) {
+        summaries = [];
+      }
+    }
 
     // 应用收藏筛选
     if (showFavoritesOnly) {
@@ -167,8 +208,9 @@ export class ChatListViewProvider implements vscode.WebviewViewProvider {
     }
 
     // 应用类型筛选
-    if (filter && filter !== 'all') {
-      summaries = summaries.filter(s => s.metadata.type === filter);
+    const filterArr = Array.isArray(filter) ? filter : [filter];
+    if (!filterArr.includes('all')) {
+      summaries = summaries.filter(s => filterArr.includes(s.metadata.type || ''));
     }
 
     // 应用排序
@@ -219,6 +261,8 @@ export class ChatListViewProvider implements vscode.WebviewViewProvider {
       scope: (s as any).scope || 'workspace',
       folderName: s.folderName || undefined,
       folderPath: s.folderPath || undefined,
+      workspaceName: s.workspaceName || undefined,
+      workspacePath: s.workspacePath || undefined,
     }));
   }
 
